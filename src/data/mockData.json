@@ -1,0 +1,114 @@
+{
+  "testUser": {
+    "email": "test@example.com",
+    "mobile": "+911234567899",
+    "otp": "1234",
+    "name": "Nishant",
+    "location": "Virar, Mumbai",
+    "avatar": "/avatar.jpg"
+  },
+  "appointments": [
+   
+    
+   
+  ],
+  "doctors": [
+    {
+      "id": 1,
+      "name": "Dr. Prakash Das",
+      "specialty": "Sr. Psychologist",
+      "qualification": "MBBS, MD (Psychiatry)",
+      "experience": "7+",
+      "available": true,
+      "timing": "09:30 AM - 07:00 PM",
+      "description": "As Psychologist Dr das practices about 7+ years....",
+      "image": "/doctor1.jpg",
+      "rating": 4.8,
+      "consultationFee": 500,
+      "patients": "5,000+",
+      "reviews": 4942,
+      "affiliation": "Fellow of Sanskara Hospital, Mumbai",
+      "about": "15+ years of experience in all aspects of psychology, including cognitive behavioral therapy and interventional counseling procedures.",
+      "service": "Medicare",
+      "specialization": "Clinical Psychology",
+      "availability": {
+        "days": "Monday to Friday",
+        "hours": "10 AM To 5 PM"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Dr. Sarah Johnson",
+      "specialty": "Cardiologist",
+      "qualification": "MBBS, MD (Cardiology)",
+      "experience": "12+",
+      "available": true,
+      "timing": "10:00 AM - 06:00 PM",
+      "description": "Expert in cardiovascular diseases with 12+ years of experience....",
+      "image": "/doctor2.jpg",
+      "rating": 4.9,
+      "consultationFee": 800,
+      "patients": "8,500+",
+      "reviews": 6234,
+      "affiliation": "Senior Consultant, Apollo Hospital",
+      "about": "Renowned cardiologist with expertise in interventional cardiology, heart failure management, and preventive cardiology.",
+      "service": "Premium Care",
+      "specialization": "Interventional Cardiology",
+      "availability": {
+        "days": "Monday to Saturday",
+        "hours": "10 AM To 6 PM"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Dr. Rajesh Kumar",
+      "specialty": "Orthopedic",
+      "qualification": "MBBS, MS (Ortho)",
+      "experience": "10+",
+      "available": false,
+      "timing": "11:00 AM - 05:00 PM",
+      "description": "Specialized in joint replacement and sports injuries....",
+      "image": "/doctor1.webp",
+      "rating": 4.7,
+      "consultationFee": 700,
+      "patients": "6,200+",
+      "reviews": 3891,
+      "affiliation": "Chief Orthopedic Surgeon, Fortis Hospital",
+      "about": "Specialist in joint replacement surgery, arthroscopy, and sports medicine with international training.",
+      "service": "General",
+      "specialization": "Joint Replacement",
+      "availability": {
+        "days": "Tuesday to Friday",
+        "hours": "11 AM To 5 PM"
+      }
+    },
+    {
+      "id": 4,
+      "name": "Dr. Emily Chen",
+      "specialty": "Dermatologist",
+      "qualification": "MBBS, MD (Dermatology)",
+      "experience": "8+",
+      "available": true,
+      "timing": "09:00 AM - 08:00 PM",
+      "description": "Skin specialist with expertise in cosmetic dermatology....",
+      "image": "/doctor4.jpg",
+      "rating": 4.6,
+      "consultationFee": 600,
+      "patients": "4,800+",
+      "reviews": 3567,
+      "affiliation": "Consultant Dermatologist, Lilavati Hospital",
+      "about": "Expert in medical and cosmetic dermatology, specializing in skin treatments and aesthetic procedures.",
+      "service": "Cosmetic",
+      "specialization": "Aesthetic Dermatology",
+      "availability": {
+        "days": "Monday to Sunday",
+        "hours": "9 AM To 8 PM"
+      }
+    }
+  ],
+  "settings": {
+    "otpLength": 4,
+    "otpExpirySeconds": 60,
+    "autoFillOtp": true
+  }
+}

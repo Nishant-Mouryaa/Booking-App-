@@ -1,14 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import mockData from "@/data/mockData.json";
 
 const LoginForm = () => {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string }>({});
   const [touched, setTouched] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+
+  // Auto-fill with mock data on component mount
+  useEffect(() => {
+    setEmail(mockData.testUser.email);
+  }, []);
 
   // Email/phone validation
   const validateEmail = (value: string) => {
@@ -17,10 +25,11 @@ const LoginForm = () => {
     }
     
     // Check if it's a phone number (simple check for digits)
-    const isPhone = /^\d+$/.test(value.trim());
+    const isPhone = /^\+?\d+$/.test(value.trim());
     
     if (isPhone) {
-      if (value.trim().length < 10) {
+      const digitsOnly = value.replace(/\D/g, '');
+      if (digitsOnly.length < 10) {
         return "Please enter a valid mobile number";
       }
     } else {
@@ -59,19 +68,36 @@ const LoginForm = () => {
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
-      console.log("Login attempted with:", { email, rememberMe });
-      
-      // Show success state
-      setShowSuccess(true);
-      
-      // Hide success after 2 seconds
-      setTimeout(() => {
+      // Check if user exists in mock data
+      const isValidUser = 
+        email === mockData.testUser.email || 
+        email === mockData.testUser.mobile;
+
+      if (isValidUser) {
+        // Show success state
+        setShowSuccess(true);
+
+        // Determine phone number for OTP
+        const phone = email.includes("@") ? mockData.testUser.mobile : email;
+        
+        // Store phone number for OTP screen
+        localStorage.setItem("verificationPhone", phone);
+        localStorage.setItem("userEmail", email);
+        
+        // Navigate to OTP page after short delay
+        setTimeout(() => {
+          router.push("/verify-otp");
+        }, 1000);
+
+      } else {
         setShowSuccess(false);
-        // Here you would typically redirect to dashboard
-        alert(`Login successful!\nEmail/Mobile: ${email}`);
-      }, 2000);
+        setErrors({ 
+          email: `User not found. Try: ${mockData.testUser.email} or ${mockData.testUser.mobile}` 
+        });
+      }
 
     } catch (error) {
+      setShowSuccess(false);
       setErrors({ email: "Login failed. Please try again." });
     } finally {
       setIsLoading(false);
@@ -80,8 +106,18 @@ const LoginForm = () => {
 
   const handleGoogleLogin = () => {
     console.log("Google login clicked");
-    // Here you would integrate Google OAuth
-    alert("Google login initiated!");
+    // For demo: Social login bypasses OTP
+    localStorage.setItem("userEmail", "google.user@example.com");
+    localStorage.setItem("socialLogin", "google");
+    router.push("/home");
+  };
+
+  const handleAppleLogin = () => {
+    console.log("Apple login clicked");
+    // For demo: Social login bypasses OTP
+    localStorage.setItem("userEmail", "apple.user@example.com");
+    localStorage.setItem("socialLogin", "apple");
+    router.push("/home");
   };
 
   const handleInputBlur = () => {
@@ -97,6 +133,14 @@ const LoginForm = () => {
 
   return (
     <form onSubmit={handleSubmit} className="login-form" noValidate>
+      {/* Dev Helper - Shows mock credentials */}
+      {/* <div className="dev-helper">
+        <p>🔧 Test Credentials (Auto-filled)</p>
+        <p><strong>Email:</strong> {mockData.testUser.email}</p>
+        <p><strong>Mobile:</strong> {mockData.testUser.mobile}</p>
+        <p><strong>OTP:</strong> {mockData.testUser.otp}</p>
+      </div> */}
+
       {/* Header */}
       <div className="form-header">
         <h1 className="form-title">Login</h1>
@@ -253,7 +297,7 @@ const LoginForm = () => {
           type="button" 
           className="social-button apple-button"
           disabled={isLoading}
-          onClick={() => alert("Apple login would go here")}
+          onClick={handleAppleLogin}
         >
           <span className="social-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">

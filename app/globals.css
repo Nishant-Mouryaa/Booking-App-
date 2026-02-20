@@ -326,6 +326,263 @@ body {
   white-space: nowrap;
 }
 
+
+/* ==================== OTP VERIFICATION STYLES ==================== */
+
+.otp-container {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.otp-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.back-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 2px solid var(--gray-200);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-button:hover {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+}
+
+.back-button:active {
+  transform: scale(0.95);
+}
+
+.otp-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--gray-900);
+  letter-spacing: -0.02em;
+}
+
+.otp-message {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.otp-message p {
+  font-size: 15px;
+  color: var(--gray-600);
+  line-height: 1.6;
+}
+
+.otp-inputs {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.otp-input {
+  width: 70px;
+  height: 70px;
+  border: 2px solid var(--gray-200);
+  border-radius: 16px;
+  font-size: 32px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--gray-900);
+  background: white;
+  transition: all 0.3s ease;
+  caret-color: transparent;
+}
+
+.otp-input-active {
+  border-color: var(--primary-color);
+  background: rgba(77, 217, 232, 0.05);
+  box-shadow: 0 0 0 4px rgba(77, 217, 232, 0.1);
+}
+
+.otp-input-error {
+  border-color: #EF4444;
+  animation: shake 0.5s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+.otp-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: #EF4444;
+  font-size: 14px;
+  margin-top: 12px;
+  animation: fadeIn 0.3s ease;
+}
+
+.otp-resend {
+  text-align: center;
+  margin: 24px 0 32px;
+  font-size: 14px;
+  color: var(--gray-600);
+}
+
+.timer-highlight {
+  color: var(--primary-color);
+  font-weight: 700;
+}
+
+.resend-button {
+  background: none;
+  border: none;
+  color: var(--primary-color);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.resend-button:hover {
+  color: var(--primary-dark);
+  text-decoration: underline;
+}
+
+.verify-button {
+  width: 100%;
+  padding: 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #4dd9e8 0%, #5de0ef 100%);
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(77, 217, 232, 0.35);
+  transition: all 0.3s ease;
+  margin-bottom: 32px;
+}
+
+.verify-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(77, 217, 232, 0.45);
+}
+
+.verify-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Number Pad */
+.number-pad {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: auto;
+  padding: 20px 0;
+}
+
+.number-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.number-button {
+  height: 64px;
+  border: none;
+  background: var(--gray-50);
+  border-radius: 12px;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--gray-900);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.number-button:hover:not(:disabled) {
+  background: var(--gray-100);
+  transform: scale(1.05);
+}
+
+.number-button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.number-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.number-button-special {
+  opacity: 0.3;
+}
+
+.number-button-delete {
+  background: var(--gray-100);
+}
+
+
+/* ==================== DEV HELPER ==================== */
+
+.dev-helper {
+  background: linear-gradient(135deg, rgba(77, 217, 232, 0.1), rgba(244, 114, 182, 0.1));
+  border: 2px dashed var(--primary-color);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: var(--gray-700);
+}
+
+.dev-helper p {
+  margin: 4px 0;
+  font-family: 'Courier New', monospace;
+}
+
+.dev-helper p:first-child {
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+/* ==================== RESPONSIVE ==================== */
+
+@media (max-width: 480px) {
+  .otp-inputs {
+    gap: 8px;
+  }
+
+  .otp-input {
+    width: 60px;
+    height: 60px;
+    font-size: 28px;
+  }
+
+  .number-button {
+    height: 56px;
+    font-size: 24px;
+  }
+
+  .home-title {
+    font-size: 28px;
+  }
+}
 /* ==================== ACCESSIBILITY IMPROVEMENTS ==================== */
 
 .form-input:focus-visible,

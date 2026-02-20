@@ -1,0 +1,346 @@
+/* ==================== APPOINTMENTS LIST PAGE ==================== */
+
+.appointments-page {
+  background: #f9fafb;
+  min-height: 100vh;
+}
+
+.appointments-wrapper {
+  padding: 0 0 100px;
+}
+
+/* Header */
+.appointments-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.appointments-header .header-back-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: none;
+  background: #f3f4f6;
+  color: #111827;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.appointments-header .header-back-button:hover {
+  background: #e5e7eb;
+}
+
+.appointments-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+/* Tabs */
+.appointments-tabs {
+  display: flex;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0 20px;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 16px 12px;
+  border: none;
+  background: none;
+  color: #9ca3af;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.tab-button.active {
+  color: #4dd9e8;
+}
+
+.tab-button.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #4dd9e8, #5de0ef);
+  border-radius: 3px 3px 0 0;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Empty State */
+.appointments-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  text-align: center;
+}
+
+.empty-illustration {
+  margin-bottom: 32px;
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.appointments-empty h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px;
+}
+
+.appointments-empty p {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.6;
+  margin: 0 0 32px;
+  max-width: 280px;
+}
+
+.book-appointment-empty-button {
+  padding: 14px 32px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #4dd9e8, #5de0ef);
+  color: white;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 16px rgba(77, 217, 232, 0.3);
+}
+
+.book-appointment-empty-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(77, 217, 232, 0.4);
+}
+
+/* Appointments List */
+.appointments-list {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.appointment-card {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.appointment-card-header {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.appointment-doctor-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e0f2fe, #dbeafe);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.appointment-doctor-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.appointment-doctor-placeholder {
+  font-size: 28px;
+  font-weight: 800;
+  color: #4dd9e8;
+}
+
+.appointment-doctor-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.appointment-doctor-info h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 6px;
+}
+
+.appointment-info-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.appointment-info-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.appointment-info-item.time {
+  color: #4dd9e8;
+  font-weight: 700;
+}
+
+.appointment-info-item.payment {
+  color: #9ca3af;
+}
+
+.appointment-menu-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: #f9fafb;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.appointment-menu-button:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+/* Dropdown Menu */
+.appointment-menu {
+  position: absolute;
+  top: 52px;
+  right: 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+  padding: 8px;
+  min-width: 160px;
+  z-index: 10;
+  animation: menuSlideIn 0.2s ease;
+}
+
+@keyframes menuSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.menu-item {
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  background: none;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+}
+
+.menu-item:hover {
+  background: #f9fafb;
+}
+
+/* Payment CTA */
+.payment-cta {
+  margin-top: 12px;
+  padding: 12px;
+  background: rgba(77, 217, 232, 0.05);
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.payment-cta-text {
+  flex: 1;
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.make-payment-button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(135deg, #4dd9e8, #5de0ef);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+.make-payment-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(77, 217, 232, 0.3);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .payment-cta {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .make-payment-button {
+    width: 100%;
+  }
+}
