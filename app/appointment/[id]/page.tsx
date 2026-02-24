@@ -34,11 +34,19 @@ export default function AppointmentPage() {
   const params = useParams();
   const [doctor, setDoctor] = useState<Doctor | null>(null);
   const [isBooking, setIsBooking] = useState(false);
+  const [activeTab, setActiveTab] = useState("find");
+
+  useEffect(() => {
+    const storedEmail = localStorage.getItem("userEmail");
+    if (!storedEmail) {
+      router.push("/login");
+      return;
+    }
+  }, [router]);
 
   useEffect(() => {
     const doctorId = parseInt(params.id as string);
     const foundDoctor = mockData.doctors.find((d) => d.id === doctorId);
-    
     if (foundDoctor) {
       setDoctor(foundDoctor as Doctor);
     } else {
@@ -48,9 +56,7 @@ export default function AppointmentPage() {
 
   const handleBookAppointment = async () => {
     if (!doctor) return;
-
     setIsBooking(true);
-
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     const newAppointment = {
@@ -69,227 +75,319 @@ export default function AppointmentPage() {
       type: "upcoming",
     };
 
-    // Persist appointments list in localStorage, seeded from mock data
     try {
       const stored = localStorage.getItem("appointments");
       const baseAppointments = stored
         ? JSON.parse(stored)
         : (mockData.appointments as any[]);
-
       const updatedAppointments = [...baseAppointments, newAppointment];
       localStorage.setItem("appointments", JSON.stringify(updatedAppointments));
     } catch {
-      // If anything goes wrong, at least keep the last booking
+      // fallback
     }
 
-    // Save last booked appointment for scheduled page
     localStorage.setItem("lastBooking", JSON.stringify(newAppointment));
-
     setIsBooking(false);
-
     router.push("/appointment-scheduled");
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem("verificationPhone");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("socialLogin");
+    localStorage.removeItem("favorites");
+    router.push("/login");
+  };
+
+  const upcomingCount = mockData.appointments.filter(
+    (a) => a.type === "upcoming"
+  ).length;
+
+  const navItems = [
+    {
+      id: "find",
+      label: "Find",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" strokeWidth="2" />
+          <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      ),
+      action: () => { setActiveTab("find"); router.push("/home"); },
+    },
+    {
+      id: "appointments",
+      label: "Appoint.",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
+          <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      ),
+      action: () => { setActiveTab("appointments"); router.push("/appointments"); },
+    },
+    {
+      id: "records",
+      label: "Records",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M9 14L11 16L15 12M7 3H17C18.1046 3 19 3.89543 19 5V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ),
+      action: () => { setActiveTab("records"); alert("📋 Medical Records coming soon!"); },
+    },
+    {
+      id: "profile",
+      label: "Profile",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
+          <path d="M5 20C5 16.6863 7.68629 14 11 14H13C16.3137 14 19 16.6863 19 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      ),
+      action: () => { setActiveTab("profile"); if (confirm("Do you want to logout?")) handleLogout(); },
+    },
+  ];
+
   if (!doctor) {
     return (
-      <div className="main-container">
-        <div className="mobile-wrapper">
-          <div style={{ padding: "40px 20px", textAlign: "center" }}>
-            <p>Loading doctor details...</p>
+      <div className="ap">
+        <main className="ap-main">
+          <div className="ap-container">
+            <p style={{ padding: "40px 20px", textAlign: "center" }}>Loading doctor details...</p>
           </div>
-        </div>
+        </main>
       </div>
     );
   }
 
   return (
-    <main className="main-container appointment-page">
-      <div className="mobile-wrapper appointment-wrapper">
-        {/* Header */}
-        <div className="appointment-header">
-          <button className="header-back-button" onClick={() => router.back()}>
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M12.5 15L7.5 10L12.5 5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-          <h1>Book Appointment</h1>
-        </div>
-
-        {/* Doctor Profile Card */}
-        <div className="doctor-profile-card">
-          <div className="doctor-profile-header">
-            <div className="doctor-profile-info">
-              <h2 className="doctor-profile-name">{doctor.name}</h2>
-              <p className="doctor-profile-specialty">{doctor.specialty}</p>
-              <p className="doctor-profile-qualification">{doctor.qualification}</p>
-              <p className="doctor-profile-affiliation">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                  <path
-                    d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 6.75 6 11 6 11C6 11 9.5 6.75 9.5 4.5C9.5 2.567 7.933 1 6 1Z"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
-                  />
-                  <circle cx="6" cy="4.5" r="1" stroke="currentColor" strokeWidth="1.2"/>
+    <div className="ap">
+      <main className="ap-main">
+        {/* Top Bar */}
+        <header className="ap-topbar">
+          <div className="ap-container ap-topbar__inner">
+            <div className="ap-topbar__left">
+              <button className="ap-back-btn" onClick={() => router.back()}>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                {doctor.affiliation}
-              </p>
+              </button>
+              <h1 className="ap-topbar__title">Book Appointment</h1>
             </div>
-            <div className="doctor-profile-image">
-              {doctor.image ? (
-                <img
-                  src={doctor.image}
-                  alt={doctor.name}
-                  className="doctor-profile-photo"
-                />
-              ) : (
-                <div className="doctor-profile-placeholder">
-                  {doctor.name.split(" ").map((n) => n[0]).join("")}
+            <div className="ap-topbar__right">
+              <button className="ap-topbar__btn" onClick={() => router.push("/home")}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline points="9,22 9,12 15,12 15,22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Home</span>
+              </button>
+              <button className="ap-topbar__btn ap-topbar__btn--logout" onClick={() => { if (confirm("Logout?")) handleLogout(); }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* Scrollable Content */}
+        <div className="ap-scroll">
+          {/* Hero Banner */}
+          <div className="ap-container">
+            <section className="ap-hero">
+              <div className="ap-hero__content">
+                <div className="ap-hero__img-wrap">
+                  {doctor.image ? (
+                    <img src={doctor.image} alt={doctor.name} className="ap-hero__img" />
+                  ) : (
+                    <div className="ap-hero__img-ph">
+                      {doctor.name.split(" ").map((n) => n[0]).join("")}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+                <div className="ap-hero__text">
+                  <h2 className="ap-hero__name">{doctor.name}</h2>
+                  <p className="ap-hero__spec">{doctor.specialty}</p>
+                  <p className="ap-hero__qual">{doctor.qualification}</p>
+                  <p className="ap-hero__affil">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                      <path d="M6 1C4.067 1 2.5 2.567 2.5 4.5C2.5 6.75 6 11 6 11C6 11 9.5 6.75 9.5 4.5C9.5 2.567 7.933 1 6 1Z" stroke="currentColor" strokeWidth="1.2" />
+                      <circle cx="6" cy="4.5" r="1" stroke="currentColor" strokeWidth="1.2" />
+                    </svg>
+                    {doctor.affiliation}
+                  </p>
+                </div>
+              </div>
+              <div className="ap-hero__stats">
+                <div className="ap-hero__stat">
+                  <strong>{doctor.patients}</strong>
+                  <span>Patients</span>
+                </div>
+                <div className="ap-hero__stat-divider" />
+                <div className="ap-hero__stat">
+                  <strong>{doctor.experience}</strong>
+                  <span>Years Exp.</span>
+                </div>
+                <div className="ap-hero__stat-divider" />
+                <div className="ap-hero__stat">
+                  <strong>{doctor.rating}</strong>
+                  <span>Rating</span>
+                </div>
+                <div className="ap-hero__stat-divider" />
+                <div className="ap-hero__stat">
+                  <strong>{doctor.reviews.toLocaleString()}</strong>
+                  <span>Reviews</span>
+                </div>
+              </div>
+            </section>
           </div>
 
-          {/* Stats */}
-          <div className="doctor-stats">
-            <div className="stat-item">
-              <div className="stat-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21M23 21V19C22.9993 18.1137 22.7044 17.2528 22.1614 16.5523C21.6184 15.8519 20.8581 15.3516 20 15.13M16 3.13C16.8604 3.3503 17.623 3.8507 18.1676 4.55231C18.7122 5.25392 19.0078 6.11683 19.0078 7.005C19.0078 7.89317 18.7122 8.75608 18.1676 9.45769C17.623 10.1593 16.8604 10.6597 16 10.88M13 7C13 9.20914 11.2091 11 9 11C6.79086 11 5 9.20914 5 7C5 4.79086 6.79086 3 9 3C11.2091 3 13 4.79086 13 7Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <span className="stat-value">{doctor.patients}</span>
-              <span className="stat-label">patients</span>
-            </div>
+          {/* Content Grid */}
+          <div className="ap-container">
+            <div className="ap-grid">
+              {/* Left Column */}
+              <div className="ap-grid__col">
+                {/* About */}
+                <div className="ap-card">
+                  <h3 className="ap-card__head">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M10 10V14M10 6V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    About Doctor
+                  </h3>
+                  <p className="ap-card__text">{doctor.about}</p>
+                </div>
 
-            <div className="stat-item">
-              <div className="stat-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                {/* Service & Specialization */}
+                <div className="ap-card">
+                  <h3 className="ap-card__head">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 2L12.5 7L18 8L14 12L15 18L10 15L5 18L6 12L2 8L7.5 7L10 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                    </svg>
+                    Service & Specialization
+                  </h3>
+                  <div className="ap-info-grid">
+                    <div className="ap-info-item">
+                      <span className="ap-info-label">Service</span>
+                      <span className="ap-info-value">{doctor.service}</span>
+                    </div>
+                    <div className="ap-info-item">
+                      <span className="ap-info-label">Specialization</span>
+                      <span className="ap-info-value">{doctor.specialization}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span className="stat-value">{doctor.experience}</span>
-              <span className="stat-label">years exper.</span>
-            </div>
 
-            <div className="stat-item">
-              <div className="stat-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-                    fill="currentColor"
-                  />
-                </svg>
-              </div>
-              <span className="stat-value">{doctor.rating}</span>
-              <span className="stat-label">rating</span>
-            </div>
+              {/* Right Column */}
+              <div className="ap-grid__col">
+                {/* Availability */}
+                <div className="ap-card">
+                  <h3 className="ap-card__head">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M10 6V10L13 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    Availability
+                  </h3>
+                  <div className="ap-avail-row">
+                    <span className="ap-avail-label">{doctor.availability.days}</span>
+                    <span className="ap-avail-value">{doctor.availability.hours}</span>
+                  </div>
+                  <div className="ap-avail-row" style={{ marginTop: 8 }}>
+                    <span className="ap-avail-label">Timing</span>
+                    <span className="ap-avail-value">{doctor.timing}</span>
+                  </div>
+                </div>
 
-            <div className="stat-item">
-              <div className="stat-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                {/* Consultation Fee */}
+                <div className="ap-card">
+                  <h3 className="ap-card__head">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 2V18M14 6H8C6.89543 6 6 6.89543 6 8C6 9.10457 6.89543 10 8 10H12C13.1046 10 14 10.8954 14 12C14 13.1046 13.1046 14 12 14H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Consultation Fee
+                  </h3>
+                  <div className="ap-fee">
+                    <span className="ap-fee__amount">₹{doctor.consultationFee}</span>
+                    <span className="ap-fee__note">per consultation</span>
+                  </div>
+                </div>
+
+                {/* Quick Tips */}
+                <div className="ap-card ap-tips">
+                  <h3 className="ap-card__head">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Before Your Visit
+                  </h3>
+                  <ul className="ap-tips__list">
+                    <li>
+                      <span className="ap-tips__dot" />
+                      <span>Carry previous medical records & prescriptions</span>
+                    </li>
+                    <li>
+                      <span className="ap-tips__dot" />
+                      <span>List your current medications & allergies</span>
+                    </li>
+                    <li>
+                      <span className="ap-tips__dot" />
+                      <span>Arrive 15 minutes before your scheduled time</span>
+                    </li>
+                    <li>
+                      <span className="ap-tips__dot" />
+                      <span>Bring a valid ID for verification</span>
+                    </li>
+                  </ul>
+                </div>
               </div>
-              <span className="stat-value">{doctor.reviews.toLocaleString()}</span>
-              <span className="stat-label">reviews</span>
             </div>
           </div>
         </div>
 
-        {/* Content Sections */}
-        <div className="appointment-content">
-          {/* About Doctor */}
-          <div className="info-section">
-            <h3 className="section-title">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path d="M10 10V14M10 6V7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              About Doctor
-            </h3>
-            <p className="section-text">{doctor.about}</p>
-          </div>
-
-          {/* Service & Specialization */}
-          <div className="info-section">
-            <h3 className="section-title">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L12.5 7L18 8L14 12L15 18L10 15L5 18L6 12L2 8L7.5 7L10 2Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              Service & Specialization
-            </h3>
-            <div className="service-grid">
-              <div className="service-item">
-                <span className="service-label">Service</span>
-                <span className="service-value">{doctor.service}</span>
-              </div>
-              <div className="service-item">
-                <span className="service-label">Specialization</span>
-                <span className="service-value">{doctor.specialization}</span>
-              </div>
+        {/* Footer */}
+        <div className="ap-footer">
+          <div className="ap-container ap-footer__inner">
+            <div className="ap-footer__price">
+              <span className="ap-footer__price-label">Consultation Fee</span>
+              <span className="ap-footer__price-amount">₹{doctor.consultationFee}</span>
             </div>
-          </div>
-
-          {/* Availability */}
-          <div className="info-section">
-            <h3 className="section-title">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M10 6V10L13 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              Availability For Consulting
-            </h3>
-            <div className="availability-row">
-              <span className="availability-label">{doctor.availability.days}</span>
-              <span className="availability-value">{doctor.availability.hours}</span>
-            </div>
+            <button
+              className="ap-footer__btn"
+              onClick={handleBookAppointment}
+              disabled={isBooking || !doctor.available}
+            >
+              {isBooking
+                ? "Booking..."
+                : doctor.available
+                  ? "Book Appointment"
+                  : "Currently Unavailable"}
+            </button>
           </div>
         </div>
+      </main>
 
-        {/* Book Button */}
-        <div className="book-appointment-footer">
+      {/* Mobile Bottom Nav */}
+      <nav className="ap-bottom">
+        {navItems.map((item) => (
           <button
-            className="book-appointment-button"
-            onClick={handleBookAppointment}
-            disabled={isBooking || !doctor.available}
+            key={item.id}
+            className={`ap-bottom__item ${activeTab === item.id ? "ap-bottom__item--active" : ""}`}
+            onClick={item.action}
           >
-            {isBooking ? "Booking..." : doctor.available ? "Book appointment" : "Currently Unavailable"}
+            {item.icon}
+            <span>{item.label}</span>
+            {item.id === "appointments" && upcomingCount > 0 && (
+              <span className="ap-bottom__badge">{upcomingCount}</span>
+            )}
           </button>
-        </div>
-      </div>
-    </main>
+        ))}
+      </nav>
+    </div>
   );
 }

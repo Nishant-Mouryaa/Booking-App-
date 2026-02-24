@@ -1,13 +1,5 @@
-import Logo from "@/components/Logo";
-import LoginForm from "@/components/LoginForm";
+import { redirect } from "next/navigation";
 
 export default function Home() {
-  return (
-    <main className="main-container">
-      <div className="mobile-wrapper">
-        <Logo />
-        <LoginForm />
-      </div>
-    </main>
-  );
+  redirect("/login");
 }

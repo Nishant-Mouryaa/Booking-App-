@@ -8,9 +8,96 @@
     "avatar": "/avatar.jpg"
   },
   "appointments": [
-   
-    
-   
+    {
+      "id": 1,
+      "appointmentNumber": "APT-2025-001",
+      "doctorId": 1,
+      "doctorName": "Dr. Prakash Das",
+      "doctorSpecialty": "Sr. Psychologist",
+      "doctorQualification": "MBBS, MD (Psychiatry)",
+      "status": "Confirmed",
+      "reportingTime": "09:30 AM",
+      "date": "2025-02-15",
+      "time": "10:00 AM",
+      "tokenNumber": "T-042",
+      "paymentStatus": "not paid",
+      "type": "upcoming"
+    },
+    {
+      "id": 2,
+      "appointmentNumber": "APT-2025-002",
+      "doctorId": 2,
+      "doctorName": "Dr. Sarah Johnson",
+      "doctorSpecialty": "Cardiologist",
+      "doctorQualification": "MBBS, MD (Cardiology)",
+      "status": "Confirmed",
+      "reportingTime": "10:00 AM",
+      "date": "2025-02-18",
+      "time": "10:30 AM",
+      "tokenNumber": "T-015",
+      "paymentStatus": "paid",
+      "type": "upcoming"
+    },
+    {
+      "id": 3,
+      "appointmentNumber": "APT-2025-003",
+      "doctorId": 4,
+      "doctorName": "Dr. Emily Chen",
+      "doctorSpecialty": "Dermatologist",
+      "doctorQualification": "MBBS, MD (Dermatology)",
+      "status": "Confirmed",
+      "reportingTime": "02:00 PM",
+      "date": "2025-02-20",
+      "time": "02:30 PM",
+      "tokenNumber": "T-087",
+      "paymentStatus": "not paid",
+      "type": "upcoming"
+    },
+    {
+      "id": 4,
+      "appointmentNumber": "APT-2025-004",
+      "doctorId": 3,
+      "doctorName": "Dr. Rajesh Kumar",
+      "doctorSpecialty": "Orthopedic",
+      "doctorQualification": "MBBS, MS (Ortho)",
+      "status": "Completed",
+      "reportingTime": "11:00 AM",
+      "date": "2025-01-28",
+      "time": "11:30 AM",
+      "tokenNumber": "T-033",
+      "paymentStatus": "paid",
+      "type": "completed"
+    },
+    {
+      "id": 5,
+      "appointmentNumber": "APT-2025-005",
+      "doctorId": 1,
+      "doctorName": "Dr. Prakash Das",
+      "doctorSpecialty": "Sr. Psychologist",
+      "doctorQualification": "MBBS, MD (Psychiatry)",
+      "status": "Completed",
+      "reportingTime": "09:30 AM",
+      "date": "2025-01-15",
+      "time": "10:00 AM",
+      "tokenNumber": "T-021",
+      "paymentStatus": "paid",
+      "type": "completed"
+    },
+    {
+      "id": 6,
+      "appointmentNumber": "APT-2025-006",
+      "doctorId": 2,
+      "doctorName": "Dr. Sarah Johnson",
+      "doctorSpecialty": "Cardiologist",
+      "doctorQualification": "MBBS, MD (Cardiology)",
+      "status": "Canceled",
+      "reportingTime": "04:00 PM",
+      "date": "2025-01-20",
+      "time": "04:30 PM",
+      "tokenNumber": "T-056",
+      "paymentStatus": "not paid",
+      "type": "canceled"
+    }
   ],
   "doctors": [
     {
@@ -21,20 +108,17 @@
       "experience": "7+",
       "available": true,
       "timing": "09:30 AM - 07:00 PM",
-      "description": "As Psychologist Dr das practices about 7+ years....",
+      "description": "As Psychologist Dr Das practices about 7+ years.",
       "image": "/doctor1.jpg",
       "rating": 4.8,
       "consultationFee": 500,
       "patients": "5,000+",
       "reviews": 4942,
       "affiliation": "Fellow of Sanskara Hospital, Mumbai",
-      "about": "15+ years of experience in all aspects of psychology, including cognitive behavioral therapy and interventional counseling procedures.",
+      "about": "15+ years of experience in all aspects of psychology.",
       "service": "Medicare",
       "specialization": "Clinical Psychology",
-      "availability": {
-        "days": "Monday to Friday",
-        "hours": "10 AM To 5 PM"
-      }
+      "availability": { "days": "Monday to Friday", "hours": "10 AM To 5 PM" }
     },
     {
       "id": 2,
@@ -44,20 +128,17 @@
       "experience": "12+",
       "available": true,
       "timing": "10:00 AM - 06:00 PM",
-      "description": "Expert in cardiovascular diseases with 12+ years of experience....",
+      "description": "Expert in cardiovascular diseases with 12+ years of experience.",
       "image": "/doctor2.jpg",
       "rating": 4.9,
       "consultationFee": 800,
       "patients": "8,500+",
       "reviews": 6234,
       "affiliation": "Senior Consultant, Apollo Hospital",
-      "about": "Renowned cardiologist with expertise in interventional cardiology, heart failure management, and preventive cardiology.",
+      "about": "Renowned cardiologist with expertise in interventional cardiology.",
       "service": "Premium Care",
       "specialization": "Interventional Cardiology",
-      "availability": {
-        "days": "Monday to Saturday",
-        "hours": "10 AM To 6 PM"
-      }
+      "availability": { "days": "Monday to Saturday", "hours": "10 AM To 6 PM" }
     },
     {
       "id": 3,
@@ -67,20 +148,17 @@
       "experience": "10+",
       "available": false,
       "timing": "11:00 AM - 05:00 PM",
-      "description": "Specialized in joint replacement and sports injuries....",
+      "description": "Specialized in joint replacement and sports injuries.",
       "image": "/doctor1.webp",
       "rating": 4.7,
       "consultationFee": 700,
       "patients": "6,200+",
       "reviews": 3891,
       "affiliation": "Chief Orthopedic Surgeon, Fortis Hospital",
-      "about": "Specialist in joint replacement surgery, arthroscopy, and sports medicine with international training.",
+      "about": "Specialist in joint replacement surgery and sports medicine.",
       "service": "General",
       "specialization": "Joint Replacement",
-      "availability": {
-        "days": "Tuesday to Friday",
-        "hours": "11 AM To 5 PM"
-      }
+      "availability": { "days": "Tuesday to Friday", "hours": "11 AM To 5 PM" }
     },
     {
       "id": 4,
@@ -90,25 +168,22 @@
       "experience": "8+",
       "available": true,
       "timing": "09:00 AM - 08:00 PM",
-      "description": "Skin specialist with expertise in cosmetic dermatology....",
+      "description": "Skin specialist with expertise in cosmetic dermatology.",
       "image": "/doctor4.jpg",
       "rating": 4.6,
       "consultationFee": 600,
       "patients": "4,800+",
       "reviews": 3567,
       "affiliation": "Consultant Dermatologist, Lilavati Hospital",
-      "about": "Expert in medical and cosmetic dermatology, specializing in skin treatments and aesthetic procedures.",
+      "about": "Expert in medical and cosmetic dermatology.",
       "service": "Cosmetic",
       "specialization": "Aesthetic Dermatology",
-      "availability": {
-        "days": "Monday to Sunday",
-        "hours": "9 AM To 8 PM"
-      }
+      "availability": { "days": "Monday to Sunday", "hours": "9 AM To 8 PM" }
     }
   ],
   "settings": {
     "otpLength": 4,
     "otpExpirySeconds": 60,
-    "autoFillOtp": true
+    "autoFillOtp": false
   }
 }

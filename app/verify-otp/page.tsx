@@ -1,34 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import AuthLayout from "@/components/AuthLayout";
 import OTPVerification from "@/components/OTPVerification";
 
 export default function VerifyOTPPage() {
-  const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phone, setPhone] = useState("+91 XXXXXXXXXX");
 
   useEffect(() => {
-    const phone = localStorage.getItem("verificationPhone");
-    if (!phone) {
-      router.push("/");
-    } else {
-      setPhoneNumber(phone);
-    }
-  }, [router]);
-
-  if (!phoneNumber) {
-    return null;
-  }
+    const storedPhone = localStorage.getItem("verificationPhone");
+    if (storedPhone) setPhone(storedPhone);
+  }, []);
 
   return (
-    <main className="main-container">
-      <div className="mobile-wrapper">
-        <OTPVerification 
-          phoneNumber={phoneNumber}
-          onBack={() => router.push("/")}
-        />
-      </div>
-    </main>
+    <AuthLayout>
+      <OTPVerification phoneNumber={phone} />
+    </AuthLayout>
   );
 }

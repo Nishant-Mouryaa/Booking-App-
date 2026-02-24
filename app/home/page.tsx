@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import mockData from "@/data/mockData.json";
 import "./home.css";
@@ -23,288 +23,501 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState("find");
-  const [filteredDoctors, setFilteredDoctors] = useState<Doctor[]>(mockData.doctors);
   const [notifications, setNotifications] = useState(3);
   const [userName, setUserName] = useState("");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [activeSpecialty, setActiveSpecialty] = useState("All");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("userEmail");
     if (!storedEmail) {
-      router.push("/");
+      router.push("/login");
       return;
     }
     setUserName(mockData.testUser.name);
-
     const savedFavorites = localStorage.getItem("favorites");
-    if (savedFavorites) {
-      setFavorites(JSON.parse(savedFavorites));
-    }
+    if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
   }, [router]);
 
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredDoctors(mockData.doctors);
-    } else {
-      const filtered = mockData.doctors.filter(
-        (doctor) =>
-          doctor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          doctor.specialty.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredDoctors(filtered);
+  // Specialties derived from doctors
+  const specialties = useMemo(() => {
+    const specs = Array.from(new Set(mockData.doctors.map((d) => d.specialty)));
+    return ["All", ...specs];
+  }, []);
+
+  // Filtered doctors
+  const filteredDoctors = useMemo(() => {
+    let docs = mockData.doctors as Doctor[];
+    if (activeSpecialty !== "All") {
+      docs = docs.filter((d) => d.specialty === activeSpecialty);
     }
-  }, [searchQuery]);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      docs = docs.filter(
+        (d) =>
+          d.name.toLowerCase().includes(q) ||
+          d.specialty.toLowerCase().includes(q)
+      );
+    }
+    return docs;
+  }, [searchQuery, activeSpecialty]);
 
   const toggleFavorite = (doctorId: number) => {
-    const newFavorites = favorites.includes(doctorId)
+    const updated = favorites.includes(doctorId)
       ? favorites.filter((id) => id !== doctorId)
       : [...favorites, doctorId];
-    
-    setFavorites(newFavorites);
-    localStorage.setItem("favorites", JSON.stringify(newFavorites));
+    setFavorites(updated);
+    localStorage.setItem("favorites", JSON.stringify(updated));
   };
 
-const handleDoctorClick = (doctor: Doctor) => {
-  router.push(`/appointment/${doctor.id}`);
-};
+  const handleDoctorClick = (doctor: Doctor) => {
+    router.push(`/appointment/${doctor.id}`);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("verificationPhone");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("socialLogin");
     localStorage.removeItem("favorites");
-    router.push("/");
+    router.push("/login");
   };
 
   const handleNotificationClick = () => {
     setNotifications(0);
-    alert("📬 Notifications:\n\n✓ Your appointment with Dr. Prakash Das is confirmed for tomorrow at 10:00 AM\n✓ Dr. Sarah Johnson sent you a message\n✓ 2 new doctors available in your area");
+    alert(
+      "📬 Notifications:\n\n✓ Appointment with Dr. Prakash Das confirmed for tomorrow 10:00 AM\n✓ Dr. Sarah Johnson sent you a message\n✓ 2 new doctors available in your area"
+    );
   };
 
+  const navItems = [
+    {
+      id: "find",
+      label: "Find a Doctor",
+      shortLabel: "Find",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" strokeWidth="2"/>
+          <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      ),
+      action: () => setActiveTab("find"),
+    },
+    {
+      id: "appointments",
+      label: "Appointments",
+      shortLabel: "Appoint.",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+          <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      ),
+      action: () => {
+        setActiveTab("appointments");
+        router.push("/appointments");
+      },
+    },
+    {
+      id: "records",
+      label: "Medical Records",
+      shortLabel: "Records",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M9 14L11 16L15 12M7 3H17C18.1046 3 19 3.89543 19 5V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      action: () => {
+        setActiveTab("records");
+        alert("📋 Medical Records coming soon!");
+      },
+    },
+    {
+      id: "profile",
+      label: "Profile",
+      shortLabel: "Profile",
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
+          <path d="M5 20C5 16.6863 7.68629 14 11 14H13C16.3137 14 19 16.6863 19 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      ),
+      action: () => {
+        setActiveTab("profile");
+        if (confirm("Do you want to logout?")) handleLogout();
+      },
+    },
+  ];
+
+  const upcomingCount = mockData.appointments.filter(
+    (a) => a.type === "upcoming"
+  ).length;
+
   return (
-    <main className="main-container home-main">
-      <div className="mobile-wrapper home-wrapper">
-        {/* Header */}
-        <div className="home-header">
-          <div className="user-info">
-            <div className="user-avatar">
-              {mockData.testUser.avatar ? (
-                <img
-                  src={mockData.testUser.avatar}
-                  alt={userName || "User avatar"}
-                  className="user-avatar-image"
-                />
+    <div className="hp">
+      {/* ========== SIDEBAR (Desktop) ========== */}
+      <aside className={`hp-sidebar ${sidebarCollapsed ? "hp-sidebar--collapsed" : ""}`}>
+        <div className="hp-sidebar__head">
+          <div className="hp-sidebar__logo">
+            <div className="hp-sidebar__logo-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M12 4v16M4 12h16" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
+              </svg>
+            </div>
+            {!sidebarCollapsed && <span className="hp-sidebar__logo-text">Shedula</span>}
+          </div>
+          <button className="hp-sidebar__toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              {sidebarCollapsed ? (
+                <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               ) : (
-                <div className="avatar-placeholder">
-                  {userName.charAt(0).toUpperCase()}
-                </div>
+                <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              )}
+            </svg>
+          </button>
+        </div>
+
+        <nav className="hp-sidebar__nav">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              className={`hp-sidebar__link ${activeTab === item.id ? "hp-sidebar__link--active" : ""}`}
+              onClick={item.action}
+              title={sidebarCollapsed ? item.label : undefined}
+            >
+              <span className="hp-sidebar__link-icon">{item.icon}</span>
+              {!sidebarCollapsed && <span className="hp-sidebar__link-label">{item.label}</span>}
+              {item.id === "appointments" && upcomingCount > 0 && !sidebarCollapsed && (
+                <span className="hp-sidebar__badge">{upcomingCount}</span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Sidebar User Card */}
+        {!sidebarCollapsed && (
+          <div className="hp-sidebar__user">
+            <div className="hp-sidebar__user-avatar">
+              {mockData.testUser.avatar ? (
+                <img src={mockData.testUser.avatar} alt={userName} />
+              ) : (
+                <span>{userName.charAt(0)}</span>
               )}
             </div>
-            <div className="user-details">
-              <h2 className="user-greeting">Hello, {userName}</h2>
-              <p className="user-location">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M7 1C4.79 1 3 2.79 3 5C3 7.5 7 13 7 13C7 13 11 7.5 11 5C11 2.79 9.21 1 7 1Z" stroke="currentColor" strokeWidth="1.5"/>
-                  <circle cx="7" cy="5" r="1.5" stroke="currentColor" strokeWidth="1.5"/>
+            <div className="hp-sidebar__user-info">
+              <span className="hp-sidebar__user-name">{userName}</span>
+              <span className="hp-sidebar__user-email">{mockData.testUser.email}</span>
+            </div>
+            <button className="hp-sidebar__logout" onClick={() => { if (confirm("Logout?")) handleLogout(); }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        )}
+        {sidebarCollapsed && (
+          <div className="hp-sidebar__foot-collapsed">
+            <button className="hp-sidebar__link hp-sidebar__link--logout" onClick={() => { if (confirm("Logout?")) handleLogout(); }} title="Logout">
+              <span className="hp-sidebar__link-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                {mockData.testUser.location}
-              </p>
+              </span>
+            </button>
+          </div>
+        )}
+      </aside>
+
+      {/* ========== MAIN ========== */}
+      <main className="hp-main">
+        {/* ---- Top Bar ---- */}
+        <header className="hp-topbar">
+          <div className="hp-topbar__left">
+            <div className="hp-topbar__avatar">
+              {mockData.testUser.avatar ? (
+                <img src={mockData.testUser.avatar} alt={userName} />
+              ) : (
+                <span>{userName.charAt(0)}</span>
+              )}
+            </div>
+            <div className="hp-topbar__greeting">
+              <span className="hp-topbar__hello">Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 17 ? "afternoon" : "evening"},</span>
+              <h1 className="hp-topbar__name">{userName} 👋</h1>
             </div>
           </div>
-          <div className="home-header-actions">
-            <button className="notification-button" onClick={handleNotificationClick}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 6.44V9.77M12.02 2C8.34 2 5.36 4.98 5.36 8.66V10.76C5.36 11.44 5.08 12.46 4.73 13.04L3.46 15.16C2.68 16.47 3.22 17.93 4.66 18.41C9.44 20 14.61 20 19.39 18.41C20.74 17.96 21.32 16.38 20.59 15.16L19.32 13.04C18.97 12.46 18.69 11.43 18.69 10.76V8.66C18.68 5 15.68 2 12.02 2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M15.33 18.82C15.33 20.65 13.83 22.15 12 22.15C11.09 22.15 10.25 21.77 9.65 21.17C9.05 20.57 8.67 19.73 8.67 18.82" stroke="currentColor" strokeWidth="1.5"/>
+
+          <div className="hp-topbar__right">
+            {/* Desktop Search */}
+            <div className="hp-topbar__search">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" className="hp-topbar__search-icon">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+                <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
-              {notifications > 0 && <span className="notification-badge">{notifications}</span>}
+              <input
+                type="text"
+                placeholder="Search doctors, specialties..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="hp-topbar__search-input"
+              />
+              {searchQuery && (
+                <button className="hp-topbar__search-clear" onClick={() => setSearchQuery("")}>
+                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                    <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Mobile Search Toggle */}
+            <button className="hp-topbar__icon-btn hp-topbar__search-toggle" onClick={() => setShowMobileSearch(!showMobileSearch)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+                <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
             </button>
-            <button
-              className="logout-button"
-              onClick={() => {
-                if (confirm("🚪 Do you want to logout?")) {
-                  handleLogout();
-                }
-              }}
-            >
-              Logout
+
+            <button className="hp-topbar__icon-btn" onClick={handleNotificationClick}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              {notifications > 0 && <span className="hp-topbar__notif-dot">{notifications}</span>}
+            </button>
+
+            <button className="hp-topbar__icon-btn hp-topbar__logout-btn" onClick={() => { if (confirm("Logout?")) handleLogout(); }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* Search Bar */}
-        <div className="search-container">
-          <div className="search-wrapper">
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="search-icon">
-              <path d="M9 17C13.4183 17 17 13.4183 17 9C17 4.58172 13.4183 1 9 1C4.58172 1 1 4.58172 1 9C1 13.4183 4.58172 17 9 17Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M19 19L14.65 14.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <input
-              type="text"
-              placeholder="Search Doctors"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-input"
-            />
-            {searchQuery && (
-              <button className="search-clear" onClick={() => setSearchQuery("")}>
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M12 4L4 12M4 4L12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        {/* Mobile Search Bar (expandable) */}
+        {showMobileSearch && (
+          <div className="hp-mobile-search">
+            <div className="hp-mobile-search__inner">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" strokeWidth="2"/>
+                <path d="M21 21l-4.35-4.35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+              <input
+                type="text"
+                placeholder="Search doctors..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="hp-mobile-search__input"
+                autoFocus
+              />
+              <button onClick={() => { setShowMobileSearch(false); setSearchQuery(""); }}>
+                <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                  <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                 </svg>
               </button>
-            )}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Doctors List - Compact Cards */}
-        <div className="doctors-list">
-          {filteredDoctors.length > 0 ? (
-            filteredDoctors.map((doctor) => (
-              <div key={doctor.id} className="doctor-card-compact">
-                <div className="compact-left">
-                  <div className="doctor-image-compact">
-                    {doctor.image ? (
-                      <img
-                        src={doctor.image}
-                        alt={doctor.name}
-                        className="doctor-photo-compact"
-                      />
-                    ) : (
-                      <div className="doctor-placeholder-compact">
-                        {doctor.name.split(' ').map(n => n[0]).join('')}
-                      </div>
-                    )}
-                    <div className={`status-indicator ${doctor.available ? 'online' : 'offline'}`}></div>
+        {/* ---- Scrollable Content ---- */}
+        <div className="hp-scroll">
+          {/* Hero Banner */}
+          <section className="hp-hero">
+            <div className="hp-hero__content">
+              <div className="hp-hero__text">
+                <h2 className="hp-hero__title">Find &amp; Book <br/><span>Top Doctors</span></h2>
+                <p className="hp-hero__desc">
+                  Get expert medical care from verified professionals. Book your appointment in minutes.
+                </p>
+                <div className="hp-hero__stats">
+                  <div className="hp-hero__stat">
+                    <strong>{mockData.doctors.filter(d => d.available).length}</strong>
+                    <span>Available Now</span>
                   </div>
-                </div>
-                
-                <div className="compact-center">
-                  <div className="compact-header">
-                    <h3 className="doctor-name-compact">{doctor.name}</h3>
-                    <span className="experience-badge">{doctor.experience} exp</span>
+                  <div className="hp-hero__stat-divider" />
+                  <div className="hp-hero__stat">
+                    <strong>{upcomingCount}</strong>
+                    <span>Upcoming</span>
                   </div>
-                  <p className="doctor-specialty-compact">{doctor.specialty}</p>
-                  <div className="compact-info">
-                    <span className="info-item">
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M7 4V7L9 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                      {doctor.timing.split('-')[0].trim()}
-                    </span>
-                    <span className="info-item">
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M7 1L8.5 4.5L12.5 5.2L9.75 7.9L10.5 12L7 10L3.5 12L4.25 7.9L1.5 5.2L5.5 4.5L7 1Z" stroke="currentColor" strokeWidth="1.5"/>
-                      </svg>
-                      {doctor.rating}
-                    </span>
-                    <span className="info-item">
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M7 13C10.3137 13 13 10.3137 13 7C13 3.68629 10.3137 1 7 1C3.68629 1 1 3.68629 1 7C1 10.3137 3.68629 13 7 13Z" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M7 4V7H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                      ₹{doctor.consultationFee}
-                    </span>
+                  <div className="hp-hero__stat-divider" />
+                  <div className="hp-hero__stat">
+                    <strong>{favorites.length}</strong>
+                    <span>Favorites</span>
                   </div>
-                </div>
-                
-                <div className="compact-right">
-                  <button
-                    className={`favorite-icon ${favorites.includes(doctor.id) ? 'active' : ''}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite(doctor.id);
-                    }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                      <path
-                        d="M10 17L8.55 15.7C4.4 12.1 1.5 9.5 1.5 6.5C1.5 4.4 3.05 2.85 5.15 2.85C6.32 2.85 7.45 3.35 8.19 4.14C8.52 4.5 8.79 4.89 9 5.32C9.21 4.89 9.48 4.5 9.81 4.14C10.55 3.35 11.68 2.85 12.85 2.85C14.95 2.85 16.5 4.4 16.5 6.5C16.5 9.5 13.6 12.1 9.45 15.7L10 17Z"
-                        fill={favorites.includes(doctor.id) ? "#EF4444" : "none"}
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                    </svg>
-                  </button>
-                  <button
-                    className="book-compact"
-                    onClick={() => handleDoctorClick(doctor)}
-                    disabled={!doctor.available}
-                  >
-                    Book
-                  </button>
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="no-results">
-              <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                <circle cx="32" cy="32" r="30" stroke="#E5E7EB" strokeWidth="2"/>
-                <path d="M32 20V32M32 40V42" stroke="#9CA3AF" strokeWidth="3" strokeLinecap="round"/>
-              </svg>
-              <p>No doctors found matching "{searchQuery}"</p>
-              <button onClick={() => setSearchQuery("")} className="reset-search">
-                Clear Search
-              </button>
+              <div className="hp-hero__illustration">
+                <svg width="200" height="160" viewBox="0 0 200 160" fill="none">
+                  <circle cx="100" cy="80" r="70" fill="rgba(255,255,255,0.15)"/>
+                  <circle cx="100" cy="80" r="50" fill="rgba(255,255,255,0.1)"/>
+                  <path d="M100 50v60M70 80h60" stroke="rgba(255,255,255,0.6)" strokeWidth="6" strokeLinecap="round"/>
+                  <circle cx="60" cy="45" r="8" fill="rgba(255,255,255,0.2)"/>
+                  <circle cx="150" cy="110" r="12" fill="rgba(255,255,255,0.12)"/>
+                  <circle cx="45" cy="115" r="6" fill="rgba(255,255,255,0.15)"/>
+                </svg>
+              </div>
             </div>
-          )}
-        </div>
+          </section>
 
-        {/* Bottom Navigation */}
-        <nav className="bottom-nav">
+          {/* Specialty Chips */}
+          <section className="hp-specialties">
+            <div className="hp-specialties__scroll">
+              {specialties.map((spec) => (
+                <button
+                  key={spec}
+                  className={`hp-chip ${activeSpecialty === spec ? "hp-chip--active" : ""}`}
+                  onClick={() => setActiveSpecialty(spec)}
+                >
+                  {spec}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {/* Doctors Section */}
+          <section className="hp-doctors">
+            <div className="hp-doctors__head">
+              <div>
+                <h2 className="hp-doctors__title">
+                  {searchQuery
+                    ? `Results for "${searchQuery}"`
+                    : activeSpecialty !== "All"
+                    ? activeSpecialty
+                    : "Recommended Doctors"}
+                </h2>
+                <p className="hp-doctors__subtitle">{filteredDoctors.length} doctors found</p>
+              </div>
+              {/* View Toggle — Desktop */}
+              <div className="hp-doctors__view-toggle">
+                <button
+                  className={`hp-view-btn ${viewMode === "grid" ? "hp-view-btn--active" : ""}`}
+                  onClick={() => setViewMode("grid")}
+                  aria-label="Grid view"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2"/>
+                    <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2"/>
+                    <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2"/>
+                    <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                </button>
+                <button
+                  className={`hp-view-btn ${viewMode === "list" ? "hp-view-btn--active" : ""}`}
+                  onClick={() => setViewMode("list")}
+                  aria-label="List view"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                    <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            {filteredDoctors.length > 0 ? (
+              <div className={`hp-doctors__grid ${viewMode === "list" ? "hp-doctors__grid--list" : ""}`}>
+                {filteredDoctors.map((doctor, idx) => (
+                  <article
+                    key={doctor.id}
+                    className={`hp-doc ${viewMode === "list" ? "hp-doc--list" : ""}`}
+                    onClick={() => handleDoctorClick(doctor)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && handleDoctorClick(doctor)}
+                    style={{ animationDelay: `${idx * 0.06}s` }}
+                  >
+                    {/* Favorite Button */}
+                    <button
+                      className={`hp-doc__fav ${favorites.includes(doctor.id) ? "hp-doc__fav--active" : ""}`}
+                      onClick={(e) => { e.stopPropagation(); toggleFavorite(doctor.id); }}
+                      aria-label="Toggle favorite"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
+                          fill={favorites.includes(doctor.id) ? "#ef4444" : "none"}
+                          stroke={favorites.includes(doctor.id) ? "#ef4444" : "currentColor"}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
+
+                    {/* Image */}
+                    <div className="hp-doc__img-wrap">
+                      {doctor.image ? (
+                        <img src={doctor.image} alt={doctor.name} className="hp-doc__img" />
+                      ) : (
+                        <div className="hp-doc__img-placeholder">
+                          {doctor.name.split(" ").map((n) => n[0]).join("")}
+                        </div>
+                      )}
+                      <span className={`hp-doc__status ${doctor.available ? "hp-doc__status--on" : ""}`} />
+                    </div>
+
+                    {/* Info */}
+                    <div className="hp-doc__info">
+                      <h3 className="hp-doc__name">{doctor.name}</h3>
+                      <p className="hp-doc__spec">{doctor.specialty}</p>
+
+                      <div className="hp-doc__meta">
+                        <span className="hp-doc__rating">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#FBBF24">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                          </svg>
+                          {doctor.rating}
+                        </span>
+                        <span className="hp-doc__exp">{doctor.experience} yrs exp</span>
+                      </div>
+
+                      <div className="hp-doc__bottom">
+                        <span className="hp-doc__fee">₹{doctor.consultationFee}</span>
+                        <button
+                          className={`hp-doc__book ${!doctor.available ? "hp-doc__book--disabled" : ""}`}
+                          onClick={(e) => { e.stopPropagation(); handleDoctorClick(doctor); }}
+                          disabled={!doctor.available}
+                        >
+                          {doctor.available ? "Book Now" : "Unavailable"}
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="hp-empty">
+                <div className="hp-empty__icon">
+                  <svg width="56" height="56" viewBox="0 0 24 24" fill="none">
+                    <circle cx="11" cy="11" r="8" stroke="#D1D5DB" strokeWidth="2"/>
+                    <path d="M21 21l-4.35-4.35" stroke="#D1D5DB" strokeWidth="2" strokeLinecap="round"/>
+                  </svg>
+                </div>
+                <h3>No doctors found</h3>
+                <p>Try a different specialty or search term</p>
+                <button className="hp-empty__btn" onClick={() => { setSearchQuery(""); setActiveSpecialty("All"); }}>
+                  Clear Filters
+                </button>
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
+
+      {/* ========== MOBILE BOTTOM NAV ========== */}
+      <nav className="hp-bottom">
+        {navItems.map((item) => (
           <button
-            className={`nav-item ${activeTab === 'find' ? 'active' : ''}`}
-            onClick={() => setActiveTab('find')}
+            key={item.id}
+            className={`hp-bottom__item ${activeTab === item.id ? "hp-bottom__item--active" : ""}`}
+            onClick={item.action}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" strokeWidth="2"/>
-              <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            <span>Find a Doctor</span>
+            {item.icon}
+            <span>{item.shortLabel}</span>
+            {item.id === "appointments" && upcomingCount > 0 && (
+              <span className="hp-bottom__badge">{upcomingCount}</span>
+            )}
           </button>
-          
-<button
-  className={`nav-item ${activeTab === 'appointments' ? 'active' : ''}`}
-  onClick={() => {
-    setActiveTab('appointments');
-    router.push('/appointments');
-  }}
->
-  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-    <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-    <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-  </svg>
-  <span>Appoint.</span>
-</button>
-          
-          <button
-            className={`nav-item ${activeTab === 'records' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('records');
-              alert('📋 Medical Records:\n\n• Lab Reports: 3\n• Prescriptions: 7\n• Visit History: 12\n• Vaccination Records: 4');
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M9 14L11 16L15 12M7 3H17C18.1046 3 19 3.89543 19 5V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>Records</span>
-          </button>
-          
-          <button
-            className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
-            onClick={() => {
-              setActiveTab('profile');
-              if (confirm('🚪 Do you want to logout?')) {
-                handleLogout();
-              }
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
-              <path d="M5 20C5 16.6863 7.68629 14 11 14H13C16.3137 14 19 16.6863 19 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            <span>Profile</span>
-          </button>
-        </nav>
-      </div>
-    </main>
+        ))}
+      </nav>
+    </div>
   );
 }
