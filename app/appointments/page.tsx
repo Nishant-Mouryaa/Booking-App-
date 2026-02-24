@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, type JSX } from "react";
 import { useRouter } from "next/navigation";
 import mockData from "@/data/mockData.json";
 import "./appointments.css";
