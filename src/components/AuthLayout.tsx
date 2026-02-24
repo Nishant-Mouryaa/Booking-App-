@@ -66,7 +66,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => {
           </div>
 
           <p className="auth-branding-footer">
-            © 2025 MediBook. All rights reserved.
+            © 2025 Shedula. All rights reserved.
           </p>
         </div>
       </div>

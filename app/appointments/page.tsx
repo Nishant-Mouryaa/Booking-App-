@@ -215,7 +215,7 @@ export default function AppointmentsPage() {
                 <path d="M12 4v16M4 12h16" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/>
               </svg>
             </div>
-            {!sidebarCollapsed && <span className="ap-sidebar__logo-text">MediBook</span>}
+            {!sidebarCollapsed && <span className="ap-sidebar__logo-text">Shedula</span>}
           </div>
           <button className="ap-sidebar__toggle" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
