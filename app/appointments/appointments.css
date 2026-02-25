@@ -760,3 +760,23 @@
       margin-bottom: 8px;
     }
   }
+
+  /* ===== SLOT INDICATOR ON APPOINTMENT CARDS ===== */
+.ap-card__slot-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  margin: 0 16px;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #16A34A;
+  line-height: 1.3;
+}
+
+.ap-card__slot-indicator svg {
+  flex-shrink: 0;
+}

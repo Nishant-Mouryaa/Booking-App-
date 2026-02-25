@@ -918,3 +918,76 @@
       gap: 8px;
     }
   }
+
+  /* ===== CARD BUTTON ROW ===== */
+.sc-card__btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.sc-card__btn-row .sc-outline-btn {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* ===== CANCEL / DANGER OUTLINE BUTTON ===== */
+.sc-outline-btn--danger {
+  color: #EF4444;
+  border-color: #FECACA;
+}
+
+.sc-outline-btn--danger:hover {
+  background: #FEF2F2;
+  border-color: #EF4444;
+}
+
+/* ===== SLOT INFO CARD ===== */
+.sc-slot-info__content {
+  margin-top: 12px;
+}
+
+.sc-slot-info__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #16A34A;
+  margin-bottom: 12px;
+}
+
+.sc-slot-info__text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #475569;
+  margin: 0 0 12px;
+}
+
+.sc-slot-info__text strong {
+  color: #1E293B;
+}
+
+.sc-slot-info__note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #FEF9C3;
+  border: 1px solid #FDE68A;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #854D0E;
+  line-height: 1.4;
+}
+
+.sc-slot-info__note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #CA8A04;
+}
