@@ -203,6 +203,10 @@ export default function AppointmentsPage() {
     type: "success" | "error" | "info";
   }>({ show: false, message: "", type: "info" });
 
+  const [doctorsWithOverrides, setDoctorsWithOverrides] = useState<
+    typeof mockData.doctors
+  >(mockData.doctors);
+
   const showToast = useCallback(
     (message: string, type: "success" | "error" | "info" = "info") => {
       setToast({ show: true, message, type });
@@ -264,6 +268,34 @@ export default function AppointmentsPage() {
       setAllAppointments(mockData.appointments as Appointment[]);
     }
   }, [router]);
+
+  // Merge doctor overrides so cards use the latest doctor-side data.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("doctorOverrides");
+      if (!raw) {
+        setDoctorsWithOverrides(mockData.doctors);
+        return;
+      }
+      const overrides = JSON.parse(raw) as Record<
+        number,
+        Partial<{
+          consultationFee: number;
+          image: string;
+          name: string;
+          specialty: string;
+          available: boolean;
+        }>
+      >;
+      const merged = (mockData.doctors as any[]).map((doc) => {
+        const ov = overrides[doc.id];
+        return ov ? { ...doc, ...ov } : doc;
+      });
+      setDoctorsWithOverrides(merged as typeof mockData.doctors);
+    } catch {
+      setDoctorsWithOverrides(mockData.doctors);
+    }
+  }, []);
 
   useEffect(() => {
     let filtered = allAppointments.filter((a) => a.type === activeTab);
@@ -365,7 +397,8 @@ export default function AppointmentsPage() {
 
   const handlePay = (apt: Appointment) => {
     const fee =
-      mockData.doctors.find((d) => d.id === apt.doctorId)?.consultationFee ?? 0;
+      (doctorsWithOverrides as any[]).find((d) => d.id === apt.doctorId)
+        ?.consultationFee ?? 0;
     setModal({
       open: true,
       title: "Confirm Payment",
@@ -922,7 +955,7 @@ export default function AppointmentsPage() {
           ) : (
             <div className="ap-grid">
               {appointments.map((apt, idx) => {
-                const doc = mockData.doctors.find(
+                const doc = (doctorsWithOverrides as any[]).find(
                   (d) => d.id === apt.doctorId
                 );
                 const initials = apt.doctorName

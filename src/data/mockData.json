@@ -7,6 +7,11 @@
     "location": "Virar, Mumbai",
     "avatar": "/avatar.jpg"
   },
+    "doctorAuth": {
+    "otp": "5678",
+    "otpLength": 4,
+    "otpExpirySeconds": 60
+  },
   "appointments": [
     {
       "id": 1,

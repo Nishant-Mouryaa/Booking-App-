@@ -29,6 +29,7 @@ export default function HomePage() {
   const [activeSpecialty, setActiveSpecialty] = useState("All");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showMobileSearch, setShowMobileSearch] = useState(false);
+  const [doctors, setDoctors] = useState<Doctor[]>(mockData.doctors as Doctor[]);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("userEmail");
@@ -37,19 +38,130 @@ export default function HomePage() {
       return;
     }
     setUserName(mockData.testUser.name);
+
+    
+    
+
+
+
+
+    // Merge any doctor-side overrides from localStorage so that
+    // edits made in the doctor dashboard are reflected here.
+    try {
+      const raw = localStorage.getItem("doctorOverrides");
+      if (raw) {
+        const overrides = JSON.parse(raw) as Record<
+          number,
+          Partial<Doctor> & {
+            availabilityDays?: string;
+            availabilityHours?: string;
+          }
+        >;
+        const merged = (mockData.doctors as Doctor[]).map((doc) => {
+          const ov = overrides[doc.id];
+          if (!ov) return doc;
+          const availability =
+            "availabilityDays" in ov || "availabilityHours" in ov
+              ? {
+                  ...(doc as any).availability,
+                  days: ov.availabilityDays ?? (doc as any).availability?.days,
+                  hours:
+                    ov.availabilityHours ?? (doc as any).availability?.hours,
+                }
+              : (doc as any).availability;
+          const { availabilityDays, availabilityHours, ...rest } = ov as any;
+          return {
+            ...doc,
+            ...rest,
+            availability,
+          } as Doctor;
+        });
+        setDoctors(merged);
+      }
+    } catch {
+      setDoctors(mockData.doctors as Doctor[]);
+    }
     const savedFavorites = localStorage.getItem("favorites");
     if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
   }, [router]);
 
+  useEffect(() => {
+    const loadDoctorsWithOverrides = () => {
+      try {
+        const raw = localStorage.getItem("doctorOverrides");
+        if (raw) {
+          const overrides = JSON.parse(raw) as Record<
+            number,
+            Partial<Doctor> & {
+              availabilityDays?: string;
+              availabilityHours?: string;
+            }
+          >;
+          const merged = (mockData.doctors as Doctor[]).map((doc) => {
+            const ov = overrides[doc.id];
+            if (!ov) return doc;
+            const availability =
+              "availabilityDays" in ov || "availabilityHours" in ov
+                ? {
+                    ...(doc as any).availability,
+                    days: ov.availabilityDays ?? (doc as any).availability?.days,
+                    hours: ov.availabilityHours ?? (doc as any).availability?.hours,
+                  }
+                : (doc as any).availability;
+            const { availabilityDays, availabilityHours, ...rest } = ov as any;
+            return { ...doc, ...rest, availability } as Doctor;
+          });
+          setDoctors(merged);
+        } else {
+          setDoctors(mockData.doctors as Doctor[]);
+        }
+      } catch {
+        setDoctors(mockData.doctors as Doctor[]);
+      }
+    };
+  
+    // Initial load
+    const storedEmail = localStorage.getItem("userEmail");
+    if (!storedEmail) {
+      router.push("/login");
+      return;
+    }
+    setUserName(mockData.testUser.name);
+    loadDoctorsWithOverrides();
+  
+    const savedFavorites = localStorage.getItem("favorites");
+    if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
+  
+    // Re-read overrides when tab regains focus
+    const handleFocus = () => {
+      loadDoctorsWithOverrides();
+    };
+  
+    // Re-read overrides when localStorage changes in another tab
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "doctorOverrides") {
+        loadDoctorsWithOverrides();
+      }
+    };
+  
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleStorage);
+  
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, [router]);
+
   // Specialties derived from doctors
   const specialties = useMemo(() => {
-    const specs = Array.from(new Set(mockData.doctors.map((d) => d.specialty)));
+    const specs = Array.from(new Set(doctors.map((d) => d.specialty)));
     return ["All", ...specs];
-  }, []);
+  }, [doctors]);
 
   // Filtered doctors
   const filteredDoctors = useMemo(() => {
-    let docs = mockData.doctors as Doctor[];
+    let docs = doctors as Doctor[];
     if (activeSpecialty !== "All") {
       docs = docs.filter((d) => d.specialty === activeSpecialty);
     }
@@ -62,7 +174,7 @@ export default function HomePage() {
       );
     }
     return docs;
-  }, [searchQuery, activeSpecialty]);
+  }, [searchQuery, activeSpecialty, doctors]);
 
   const toggleFavorite = (doctorId: number) => {
     const updated = favorites.includes(doctorId)
@@ -330,7 +442,7 @@ export default function HomePage() {
                 </p>
                 <div className="hp-hero__stats">
                   <div className="hp-hero__stat">
-                    <strong>{mockData.doctors.filter(d => d.available).length}</strong>
+                    <strong>{doctors.filter(d => d.available).length}</strong>
                     <span>Available Now</span>
                   </div>
                   <div className="hp-hero__stat-divider" />

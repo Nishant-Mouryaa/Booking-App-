@@ -223,7 +223,13 @@ const LoginForm = () => {
           Sign up
         </Link>
       </p>
+       {/* Hint for demo */}
+        <p className="otp-hint">
+          Demo email: <strong>test@example.com</strong>
+        </p>
     </form>
+    
+     
   );
 };
 

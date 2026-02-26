@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import mockData from "@/data/mockData.json";
 import "../appointment.css";
+import { getDoctorWithOverrides } from "../../../utils/getDoctorWithOverrides";
+import type { DoctorSlotConfig } from "../../../utils/getDoctorWithOverrides";
 
 interface Doctor {
   id: number;
@@ -29,6 +31,12 @@ interface Doctor {
   };
 }
 
+interface DoctorOverrideConfig {
+  defaultStartTime?: string;
+  defaultEndTime?: string;
+  slotDurationMinutes?: number;
+}
+
 interface BookedSlot {
   doctorId: number;
   date: string;
@@ -49,6 +57,7 @@ export default function AppointmentPage() {
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [bookedSlots, setBookedSlots] = useState<BookedSlot[]>([]);
   const [availableDates, setAvailableDates] = useState<string[]>([]);
+const [slotConfig, setSlotConfig] = useState<DoctorSlotConfig | null>(null);
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("userEmail");
@@ -58,33 +67,78 @@ export default function AppointmentPage() {
     }
   }, [router]);
 
-  useEffect(() => {
-    const doctorId = parseInt(params.id as string);
-    const foundDoctor = mockData.doctors.find((d) => d.id === doctorId);
-    if (foundDoctor) {
-      setDoctor(foundDoctor as Doctor);
-    } else {
-      router.push("/home");
-    }
-  }, [params.id, router]);
+useEffect(() => {
+  const doctorId = parseInt(params.id as string);
+  if (isNaN(doctorId)) {
+    router.push("/home");
+    return;
+  }
 
+  // ✅ Helper to load & merge doctor data
+  const loadDoctor = () => {
+    const { doctor: mergedDoctor, slotConfig: config } =
+      getDoctorWithOverrides(doctorId);
+
+    if (!mergedDoctor) {
+      router.push("/home");
+      return;
+    }
+
+    setDoctor(mergedDoctor);
+    setSlotConfig(config);
+  };
+
+  // Initial load
+  loadDoctor();
+
+  // ✅ Re-read when tab regains focus
+  const handleFocus = () => {
+    loadDoctor();
+  };
+
+  // ✅ Re-read when localStorage changes in another tab
+  const handleStorage = (e: StorageEvent) => {
+    if (e.key === "doctorOverrides") {
+      loadDoctor();
+    }
+  };
+
+  window.addEventListener("focus", handleFocus);
+  window.addEventListener("storage", handleStorage);
+
+  return () => {
+    window.removeEventListener("focus", handleFocus);
+    window.removeEventListener("storage", handleStorage);
+  };
+}, [params.id, router]);
   // Generate next 7 available dates
-  useEffect(() => {
-    const dates: string[] = [];
-    const today = new Date();
-    for (let i = 1; i <= 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      // Skip Sundays (or customize based on doctor availability)
-      if (date.getDay() !== 0) {
-        dates.push(date.toISOString().split("T")[0]);
-      }
+
+useEffect(() => {
+  if (!doctor) return;
+
+  const workingDays = getWorkingDays(doctor.availability.days);
+  const dates: string[] = [];
+  const today = new Date();
+
+  // Look ahead up to 14 days to find 7 valid working dates
+  for (let i = 1; i <= 14 && dates.length < 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, ...
+
+    if (workingDays.includes(dayOfWeek)) {
+      dates.push(date.toISOString().split("T")[0]);
     }
-    setAvailableDates(dates);
-    if (dates.length > 0) {
-      setSelectedDate(dates[0]);
-    }
-  }, []);
+  }
+
+  setAvailableDates(dates);
+  if (dates.length > 0) {
+    setSelectedDate(dates[0]);
+  } else {
+    setSelectedDate("");
+  }
+  setSelectedTime("");
+}, [doctor]); // ✅ Re-run when doctor changes (including overrides)
 
   // Load booked slots from localStorage
   useEffect(() => {
@@ -113,172 +167,281 @@ export default function AppointmentPage() {
   }, []);
 
   // Generate time slots based on doctor's timing
-  const generateTimeSlots = (): string[] => {
-    if (!doctor) return [];
-    const slots: string[] = [];
-    // Parse doctor timing like "9:00 AM - 5:00 PM"
-    const timingParts = doctor.timing.split("-").map((t) => t.trim());
-    let startHour = 9;
-    let endHour = 17;
 
+
+const timeSlots = useMemo(() => {
+  if (!doctor) return [];
+  const slots: string[] = [];
+
+  // Priority 1: Doctor dashboard explicit slot config
+  if (slotConfig?.defaultStartTime && slotConfig?.defaultEndTime) {
+    const duration = slotConfig.slotDurationMinutes ?? 30;
     try {
-      const parseTime = (timeStr: string): number => {
-        const match = timeStr.match(/(\d+):?(\d*)\s*(AM|PM)?/i);
-        if (!match) return 9;
-        let hour = parseInt(match[1]);
-        const period = match[3]?.toUpperCase();
-        if (period === "PM" && hour !== 12) hour += 12;
-        if (period === "AM" && hour === 12) hour = 0;
-        return hour;
-      };
-
-      if (timingParts.length >= 2) {
-        startHour = parseTime(timingParts[0]);
-        endHour = parseTime(timingParts[1]);
+      const [sh, sm] = slotConfig.defaultStartTime.split(":").map(Number);
+      const [eh, em] = slotConfig.defaultEndTime.split(":").map(Number);
+      let current = sh * 60 + (isNaN(sm) ? 0 : sm);
+      const end = eh * 60 + (isNaN(em) ? 0 : em);
+      while (current < end) {
+        const hour24 = Math.floor(current / 60);
+        const minute = current % 60;
+        const h12 = hour24 % 12 || 12;
+        const period = hour24 < 12 ? "AM" : "PM";
+        slots.push(
+          `${h12}:${minute.toString().padStart(2, "0")} ${period}`
+        );
+        current += duration;
       }
+      return slots;
     } catch {
-      startHour = 9;
-      endHour = 17;
+      // fall through
     }
+  }
 
-    for (let hour = startHour; hour < endHour; hour++) {
-      for (let min = 0; min < 60; min += 30) {
-        const h = hour % 12 || 12;
-        const period = hour < 12 ? "AM" : "PM";
-        const timeStr = `${h}:${min.toString().padStart(2, "0")} ${period}`;
-        slots.push(timeStr);
+  // Priority 2: Parse availability.hours (the patient-facing field)
+  // Priority 3: Fall back to timing field
+  // ✅ NEW: Unified parser that tries availability.hours first, then timing
+  const parseTimeRange = (
+    rangeStr: string
+  ): { startHour: number; startMin: number; endHour: number; endMin: number } | null => {
+    // Handles formats like:
+    //   "10 AM To 5 PM"
+    //   "10:00 AM To 5:00 PM"  
+    //   "09:30 AM - 07:00 PM"
+    //   "9 AM - 5 PM"
+    const match = rangeStr.match(
+      /(\d{1,2}):?(\d{2})?\s*(AM|PM)\s*(?:To|-|–)\s*(\d{1,2}):?(\d{2})?\s*(AM|PM)/i
+    );
+    if (!match) return null;
+
+    let sH = parseInt(match[1]);
+    const sM = match[2] ? parseInt(match[2]) : 0;
+    const sPeriod = match[3].toUpperCase();
+
+    let eH = parseInt(match[4]);
+    const eM = match[5] ? parseInt(match[5]) : 0;
+    const ePeriod = match[6].toUpperCase();
+
+    if (sPeriod === "PM" && sH !== 12) sH += 12;
+    if (sPeriod === "AM" && sH === 12) sH = 0;
+    if (ePeriod === "PM" && eH !== 12) eH += 12;
+    if (ePeriod === "AM" && eH === 12) eH = 0;
+
+    return { startHour: sH, startMin: sM, endHour: eH, endMin: eM };
+  };
+
+  // ✅ Try availability.hours first (what patients see), then fall back to timing
+  const parsed =
+    parseTimeRange(doctor.availability.hours) ||
+    parseTimeRange(doctor.timing);
+
+  const startTotal = parsed ? parsed.startHour * 60 + parsed.startMin : 9 * 60;
+  const endTotal = parsed ? parsed.endHour * 60 + parsed.endMin : 17 * 60;
+  const duration = slotConfig?.slotDurationMinutes ?? 30;
+
+  let current = startTotal;
+  while (current < endTotal) {
+    const hour24 = Math.floor(current / 60);
+    const minute = current % 60;
+    const h12 = hour24 % 12 || 12;
+    const period = hour24 < 12 ? "AM" : "PM";
+    slots.push(`${h12}:${minute.toString().padStart(2, "0")} ${period}`);
+    current += duration;
+  }
+
+  return slots;
+}, [doctor, slotConfig]);
+
+// ✅ NEW: Parse availability.days into actual day numbers
+const getWorkingDays = (daysStr: string): number[] => {
+  const dayMap: Record<string, number> = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+  };
+
+  const lower = daysStr.toLowerCase();
+
+  // Handle "Monday to Friday" format
+  const rangeMatch = lower.match(
+    /(\w+)\s+to\s+(\w+)/
+  );
+  if (rangeMatch) {
+    const start = dayMap[rangeMatch[1]];
+    const end = dayMap[rangeMatch[2]];
+    if (start !== undefined && end !== undefined) {
+      const days: number[] = [];
+      if (start <= end) {
+        for (let i = start; i <= end; i++) days.push(i);
+      } else {
+        // Wraps around: e.g., "Friday to Monday"
+        for (let i = start; i <= 6; i++) days.push(i);
+        for (let i = 0; i <= end; i++) days.push(i);
       }
+      return days;
     }
+  }
 
-    return slots;
-  };
+  // Handle "Monday, Wednesday, Friday" format
+  const commaSplit = lower.split(/[,&]+/).map((s) => s.trim());
+  if (commaSplit.length > 1) {
+    return commaSplit
+      .map((d) => dayMap[d])
+      .filter((d): d is number => d !== undefined);
+  }
 
-  // Check if a specific slot is booked
-  const isSlotBooked = (date: string, time: string): boolean => {
-    if (!doctor) return false;
-    return bookedSlots.some(
-      (slot) =>
-        slot.doctorId === doctor.id &&
-        slot.date === date &&
-        slot.time === time
+  // Handle "Monday to Sunday" = all days
+  if (lower.includes("all") || lower.includes("everyday")) {
+    return [0, 1, 2, 3, 4, 5, 6];
+  }
+
+  // Default: Monday to Saturday
+  return [1, 2, 3, 4, 5, 6];
+};
+  // ✅ NEW: Get booking count for a specific slot
+const getSlotBookingCount = (date: string, time: string): number => {
+  if (!doctor) return 0;
+  return bookedSlots.filter(
+    (slot) =>
+      slot.doctorId === doctor.id &&
+      slot.date === date &&
+      slot.time === time
+  ).length;
+};
+
+// ✅ NEW: Get max patients allowed per slot
+const maxPerSlot = useMemo(() => {
+  if (!slotConfig) return 1;
+  if (slotConfig.appointmentType === "group") {
+    return slotConfig.maxPatientsPerSlot ?? 1;
+  }
+  return slotConfig.maxPatientsPerSlot ?? 1;
+}, [slotConfig]);
+
+// ✅ UPDATED: Slot is fully booked only when bookings >= maxPerSlot
+const isSlotFullyBooked = (date: string, time: string): boolean => {
+  return getSlotBookingCount(date, time) >= maxPerSlot;
+};
+
+// Check if slot is booked by current user (unchanged logic)
+const isSlotBookedByMe = (date: string, time: string): boolean => {
+  if (!doctor) return false;
+  const userEmail = localStorage.getItem("userEmail") || "";
+  return bookedSlots.some(
+    (slot) =>
+      slot.doctorId === doctor.id &&
+      slot.date === date &&
+      slot.time === time &&
+      slot.bookedBy === userEmail
+  );
+};
+
+// Check if a time slot is in the past (unchanged)
+const isSlotInPast = (date: string, time: string): boolean => {
+  try {
+    const now = new Date();
+    const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    if (!match) return false;
+    let hour = parseInt(match[1]);
+    const min = parseInt(match[2]);
+    const period = match[3].toUpperCase();
+    if (period === "PM" && hour !== 12) hour += 12;
+    if (period === "AM" && hour === 12) hour = 0;
+
+    const slotDate = new Date(date);
+    slotDate.setHours(hour, min, 0, 0);
+    return slotDate <= now;
+  } catch {
+    return false;
+  }
+};
+
+// ✅ UPDATED: Available slots = not fully booked AND not in past
+const getAvailableSlotsCount = (date: string): number => {
+  return timeSlots.filter(
+    (time) => !isSlotFullyBooked(date, time) && !isSlotInPast(date, time)
+  ).length;
+};
+const handleBookAppointment = async () => {
+  if (!doctor || !selectedDate || !selectedTime) return;
+
+  // ✅ UPDATED: Check against capacity, not just existence
+  if (isSlotFullyBooked(selectedDate, selectedTime)) {
+    alert(
+      "⚠️ This time slot is now fully booked. Please select a different time."
     );
+    const stored = localStorage.getItem("bookedSlots");
+    if (stored) setBookedSlots(JSON.parse(stored));
+    setSelectedTime("");
+    return;
+  }
+
+  // ✅ Prevent same user from double-booking same slot
+  if (isSlotBookedByMe(selectedDate, selectedTime)) {
+    alert("⚠️ You already have a booking at this time slot.");
+    setSelectedTime("");
+    return;
+  }
+
+  setIsBooking(true);
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  const appointmentId = Date.now();
+  const userEmail = localStorage.getItem("userEmail") || "";
+
+  const newAppointment = {
+    id: appointmentId,
+    appointmentNumber: Math.floor(Math.random() * 100).toString(),
+    doctorId: doctor.id,
+    doctorName: doctor.name,
+    doctorSpecialty: doctor.specialty,
+    doctorQualification: doctor.qualification,
+    consultationFee: doctor.consultationFee,
+    status: "active",
+    reportingTime: `${formatDateDisplay(selectedDate)} ${selectedTime}`,
+    date: selectedDate,
+    time: selectedTime,
+    tokenNumber: Math.floor(Math.random() * 50).toString(),
+    paymentStatus: "not paid",
+    type: "upcoming",
   };
 
-  // Check if slot is booked by current user
-  const isSlotBookedByMe = (date: string, time: string): boolean => {
-    if (!doctor) return false;
-    const userEmail = localStorage.getItem("userEmail") || "";
-    return bookedSlots.some(
-      (slot) =>
-        slot.doctorId === doctor.id &&
-        slot.date === date &&
-        slot.time === time &&
-        slot.bookedBy === userEmail
+  const newBookedSlot: BookedSlot = {
+    doctorId: doctor.id,
+    date: selectedDate,
+    time: selectedTime,
+    bookedBy: userEmail,
+    appointmentId: appointmentId,
+  };
+
+  try {
+    const stored = localStorage.getItem("appointments");
+    const baseAppointments = stored
+      ? JSON.parse(stored)
+      : (mockData.appointments as any[]);
+    localStorage.setItem(
+      "appointments",
+      JSON.stringify([...baseAppointments, newAppointment])
     );
-  };
 
-  // Check if a time slot is in the past
-  const isSlotInPast = (date: string, time: string): boolean => {
-    try {
-      const now = new Date();
-      const match = time.match(/(\d+):(\d+)\s*(AM|PM)/i);
-      if (!match) return false;
-      let hour = parseInt(match[1]);
-      const min = parseInt(match[2]);
-      const period = match[3].toUpperCase();
-      if (period === "PM" && hour !== 12) hour += 12;
-      if (period === "AM" && hour === 12) hour = 0;
+    const existingSlots = localStorage.getItem("bookedSlots");
+    const currentSlots: BookedSlot[] = existingSlots
+      ? JSON.parse(existingSlots)
+      : [];
+    const updatedSlots = [...currentSlots, newBookedSlot];
+    localStorage.setItem("bookedSlots", JSON.stringify(updatedSlots));
+    setBookedSlots(updatedSlots);
+  } catch {
+    // fallback
+  }
 
-      const slotDate = new Date(date);
-      slotDate.setHours(hour, min, 0, 0);
-      return slotDate <= now;
-    } catch {
-      return false;
-    }
-  };
-
-  // Get count of available slots for a date
-  const getAvailableSlotsCount = (date: string): number => {
-    const allSlots = generateTimeSlots();
-    return allSlots.filter(
-      (time) => !isSlotBooked(date, time) && !isSlotInPast(date, time)
-    ).length;
-  };
-
-  const handleBookAppointment = async () => {
-    if (!doctor || !selectedDate || !selectedTime) return;
-
-    // Double-check slot availability before booking
-    if (isSlotBooked(selectedDate, selectedTime)) {
-      alert(
-        "⚠️ This time slot was just booked by someone else. Please select a different time."
-      );
-      // Refresh booked slots
-      const stored = localStorage.getItem("bookedSlots");
-      if (stored) setBookedSlots(JSON.parse(stored));
-      setSelectedTime("");
-      return;
-    }
-
-    setIsBooking(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    const appointmentId = Date.now();
-    const userEmail = localStorage.getItem("userEmail") || "";
-
-    const newAppointment = {
-      id: appointmentId,
-      appointmentNumber: Math.floor(Math.random() * 100).toString(),
-      doctorId: doctor.id,
-      doctorName: doctor.name,
-      doctorSpecialty: doctor.specialty,
-      doctorQualification: doctor.qualification,
-      status: "active",
-      reportingTime: `${formatDateDisplay(selectedDate)} ${selectedTime}`,
-      date: selectedDate,
-      time: selectedTime,
-      tokenNumber: Math.floor(Math.random() * 50).toString(),
-      paymentStatus: "not paid",
-      type: "upcoming",
-    };
-
-    // Save the booked slot
-    const newBookedSlot: BookedSlot = {
-      doctorId: doctor.id,
-      date: selectedDate,
-      time: selectedTime,
-      bookedBy: userEmail,
-      appointmentId: appointmentId,
-    };
-
-    try {
-      // Save appointment
-      const stored = localStorage.getItem("appointments");
-      const baseAppointments = stored
-        ? JSON.parse(stored)
-        : (mockData.appointments as any[]);
-      const updatedAppointments = [...baseAppointments, newAppointment];
-      localStorage.setItem(
-        "appointments",
-        JSON.stringify(updatedAppointments)
-      );
-
-      // Save booked slot
-      const existingSlots = localStorage.getItem("bookedSlots");
-      const currentSlots: BookedSlot[] = existingSlots
-        ? JSON.parse(existingSlots)
-        : [];
-      const updatedSlots = [...currentSlots, newBookedSlot];
-      localStorage.setItem("bookedSlots", JSON.stringify(updatedSlots));
-      setBookedSlots(updatedSlots);
-    } catch {
-      // fallback
-    }
-
-    localStorage.setItem("lastBooking", JSON.stringify(newAppointment));
-    setIsBooking(false);
-    router.push("/appointment-scheduled");
-  };
+  localStorage.setItem("lastBooking", JSON.stringify(newAppointment));
+  setIsBooking(false);
+  router.push("/appointment-scheduled");
+};
 
   const formatDateDisplay = (dateStr: string): string => {
     try {
@@ -347,8 +510,6 @@ export default function AppointmentPage() {
       return mockData.appointments.filter((a) => a.type === "upcoming").length;
     }
   })();
-
-  const timeSlots = generateTimeSlots();
 
   const navItems = [
     {
@@ -699,146 +860,127 @@ export default function AppointmentPage() {
                   </h3>
 
                   {/* Slot Legend */}
-                  <div className="ap-slot-legend">
-                    <div className="ap-slot-legend__item">
-                      <span className="ap-slot-legend__dot ap-slot-legend__dot--available"></span>
-                      <span>Available</span>
-                    </div>
-                    <div className="ap-slot-legend__item">
-                      <span className="ap-slot-legend__dot ap-slot-legend__dot--booked"></span>
-                      <span>Booked</span>
-                    </div>
-                    <div className="ap-slot-legend__item">
-                      <span className="ap-slot-legend__dot ap-slot-legend__dot--mine"></span>
-                      <span>Your Booking</span>
-                    </div>
-                    <div className="ap-slot-legend__item">
-                      <span className="ap-slot-legend__dot ap-slot-legend__dot--selected"></span>
-                      <span>Selected</span>
-                    </div>
-                  </div>
+                {/* Slot Legend — ✅ UPDATED with capacity info */}
+<div className="ap-slot-legend">
+  <div className="ap-slot-legend__item">
+    <span className="ap-slot-legend__dot ap-slot-legend__dot--available"></span>
+    <span>Available</span>
+  </div>
+  <div className="ap-slot-legend__item">
+    <span className="ap-slot-legend__dot ap-slot-legend__dot--booked"></span>
+    <span>Full</span>
+  </div>
+  <div className="ap-slot-legend__item">
+    <span className="ap-slot-legend__dot ap-slot-legend__dot--mine"></span>
+    <span>Your Booking</span>
+  </div>
+  <div className="ap-slot-legend__item">
+    <span className="ap-slot-legend__dot ap-slot-legend__dot--selected"></span>
+    <span>Selected</span>
+  </div>
+  {maxPerSlot > 1 && (
+    <div className="ap-slot-legend__item">
+      <span className="ap-slot-legend__dot ap-slot-legend__dot--partial"></span>
+      <span>Filling Up</span>
+    </div>
+  )}
+</div>
 
-                  <div className="ap-time-grid">
-                    {timeSlots.map((time) => {
-                      const booked = isSlotBooked(selectedDate, time);
-                      const bookedByMe = isSlotBookedByMe(
-                        selectedDate,
-                        time
-                      );
-                      const past = isSlotInPast(selectedDate, time);
-                      const isSelected = selectedTime === time;
-                      const isDisabled = booked || past;
+{/* ✅ Show group booking info banner */}
+{maxPerSlot > 1 && (
+  <div className="ap-group-info">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+    <span>
+      Group appointments — up to <strong>{maxPerSlot} patients</strong> per
+      slot. Slots remain bookable until full.
+    </span>
+  </div>
+)}
 
-                      return (
-                        <button
-                          key={time}
-                          className={`ap-time-slot ${
-                            isSelected ? "ap-time-slot--selected" : ""
-                          } ${booked ? "ap-time-slot--booked" : ""} ${
-                            bookedByMe ? "ap-time-slot--mine" : ""
-                          } ${past ? "ap-time-slot--past" : ""}`}
-                          onClick={() => !isDisabled && setSelectedTime(time)}
-                          disabled={isDisabled}
-                          title={
-                            bookedByMe
-                              ? "You already have a booking at this time"
-                              : booked
-                              ? "This slot is already booked"
-                              : past
-                              ? "This time has passed"
-                              : `Book at ${time}`
-                          }
-                        >
-                          <span className="ap-time-slot__time">{time}</span>
-                          {booked && !bookedByMe && (
-                            <span className="ap-time-slot__status">
-                              <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                              >
-                                <circle
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                />
-                                <path
-                                  d="M15 9l-6 6M9 9l6 6"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                />
-                              </svg>
-                              Booked
-                            </span>
-                          )}
-                          {bookedByMe && (
-                            <span className="ap-time-slot__status ap-time-slot__status--mine">
-                              <svg
-                                width="12"
-                                height="12"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                              >
-                                <circle
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                />
-                                <path
-                                  d="M9 12l2 2 4-4"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                              Your Slot
-                            </span>
-                          )}
-                          {past && !booked && (
-                            <span className="ap-time-slot__status">
-                              Passed
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
+<div className="ap-time-grid">
+  {timeSlots.map((time) => {
+    const bookingCount = getSlotBookingCount(selectedDate, time);
+    const fullyBooked = isSlotFullyBooked(selectedDate, time);
+    const bookedByMe = isSlotBookedByMe(selectedDate, time);
+    const past = isSlotInPast(selectedDate, time);
+    const isSelected = selectedTime === time;
+    const isDisabled = fullyBooked || past || bookedByMe;
+    const spotsLeft = maxPerSlot - bookingCount;
+    const isFillingUp =
+      maxPerSlot > 1 && bookingCount > 0 && !fullyBooked;
 
-                  {selectedDate &&
-                    getAvailableSlotsCount(selectedDate) === 0 && (
-                      <div className="ap-slots-full-msg">
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                        >
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                          />
-                          <path
-                            d="M12 8v4m0 4h.01"
-                            stroke="currentColor"
-                            strokeWidth="1.5"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                        All slots are booked for this date. Please select
-                        another date.
-                      </div>
-                    )}
-                </div>
+    return (
+      <button
+        key={time}
+        className={`ap-time-slot ${
+          isSelected ? "ap-time-slot--selected" : ""
+        } ${fullyBooked ? "ap-time-slot--booked" : ""} ${
+          bookedByMe ? "ap-time-slot--mine" : ""
+        } ${past ? "ap-time-slot--past" : ""} ${
+          isFillingUp ? "ap-time-slot--filling" : ""
+        }`}
+        onClick={() => !isDisabled && setSelectedTime(time)}
+        disabled={isDisabled}
+        title={
+          bookedByMe
+            ? "You already have a booking at this time"
+            : fullyBooked
+            ? "This slot is fully booked"
+            : past
+            ? "This time has passed"
+            : maxPerSlot > 1
+            ? `Book at ${time} (${spotsLeft}/${maxPerSlot} spots left)`
+            : `Book at ${time}`
+        }
+      >
+        <span className="ap-time-slot__time">{time}</span>
+
+        {/* ✅ Show capacity indicator for group slots */}
+        {maxPerSlot > 1 && !past && (
+          <span
+            className={`ap-time-slot__capacity ${
+              fullyBooked
+                ? "ap-time-slot__capacity--full"
+                : spotsLeft <= Math.ceil(maxPerSlot * 0.3)
+                ? "ap-time-slot__capacity--low"
+                : ""
+            }`}
+          >
+            {fullyBooked
+              ? "Full"
+              : `${spotsLeft}/${maxPerSlot}`}
+          </span>
+        )}
+
+        {/* Individual slot status indicators */}
+        {maxPerSlot === 1 && fullyBooked && !bookedByMe && (
+          <span className="ap-time-slot__status">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+              <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Booked
+          </span>
+        )}
+        {bookedByMe && (
+          <span className="ap-time-slot__status ap-time-slot__status--mine">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+              <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Your Slot
+          </span>
+        )}
+        {past && !fullyBooked && (
+          <span className="ap-time-slot__status">Passed</span>
+        )}
+      </button>
+    );
+  })}
+</div>
 
                 {/* About */}
                 <div className="ap-card">
@@ -952,44 +1094,50 @@ export default function AppointmentPage() {
                   </div>
                 )}
 
-                {/* Availability */}
-                <div className="ap-card">
-                  <h3 className="ap-card__head">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                    >
-                      <circle
-                        cx="10"
-                        cy="10"
-                        r="8"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M10 6V10L13 11"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    Availability
-                  </h3>
-                  <div className="ap-avail-row">
-                    <span className="ap-avail-label">
-                      {doctor.availability.days}
-                    </span>
-                    <span className="ap-avail-value">
-                      {doctor.availability.hours}
-                    </span>
-                  </div>
-                  <div className="ap-avail-row" style={{ marginTop: 8 }}>
-                    <span className="ap-avail-label">Timing</span>
-                    <span className="ap-avail-value">{doctor.timing}</span>
-                  </div>
-                </div>
+            
+   {/* Availability Card */}
+<div className="ap-card">
+  <h3 className="ap-card__head">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+      <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 6V10L13 11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+    Availability
+  </h3>
+  <div className="ap-avail-row">
+    <span className="ap-avail-label">Days</span>
+    <span className="ap-avail-value">{doctor.availability.days}</span>
+  </div>
+  <div className="ap-avail-row" style={{ marginTop: 8 }}>
+    <span className="ap-avail-label">Hours</span>
+    <span className="ap-avail-value">{doctor.availability.hours}</span>
+  </div>
+  {doctor.timing !== doctor.availability.hours && (
+    <div className="ap-avail-row" style={{ marginTop: 8 }}>
+      <span className="ap-avail-label">Clinic Timing</span>
+      <span className="ap-avail-value ap-avail-value--muted">{doctor.timing}</span>
+    </div>
+  )}
+  {slotConfig && (
+    <>
+      <div className="ap-avail-row" style={{ marginTop: 8 }}>
+        <span className="ap-avail-label">Slot Duration</span>
+        <span className="ap-avail-value">
+          {slotConfig.slotDurationMinutes ?? 30} minutes
+        </span>
+      </div>
+      {/* ✅ NEW: Show appointment type & capacity */}
+      <div className="ap-avail-row" style={{ marginTop: 8 }}>
+        <span className="ap-avail-label">Appointment Type</span>
+        <span className="ap-avail-value">
+          {slotConfig.appointmentType === "group"
+            ? `Group (up to ${maxPerSlot} patients/slot)`
+            : "Individual (1 patient/slot)"}
+        </span>
+      </div>
+    </>
+  )}
+</div>
 
                 {/* Consultation Fee */}
                 <div className="ap-card">
@@ -1066,6 +1214,7 @@ export default function AppointmentPage() {
             </div>
           </div>
         </div>
+        </div>
 
         {/* Footer */}
         <div className="ap-footer">
@@ -1100,6 +1249,7 @@ export default function AppointmentPage() {
             </button>
           </div>
         </div>
+        
       </main>
 
       {/* Mobile Bottom Nav */}
@@ -1121,5 +1271,6 @@ export default function AppointmentPage() {
         ))}
       </nav>
     </div>
+  
   );
 }

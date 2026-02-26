@@ -988,3 +988,164 @@
    .auth-form-scroll::-webkit-scrollbar-thumb:hover {
      background: #9ca3af;
    }
+   /* =============================================
+   DOCTOR OTP — Additional Styles
+   ============================================= */
+
+/* Doctor-themed icon circle */
+.otp-icon-circle--doctor {
+  background: linear-gradient(135deg, #dbeafe, #ede9fe) !important;
+  color: #4f46e5 !important;
+}
+
+/* Doctor info card inside OTP screen */
+.otp-doctor-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 16px 0 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.otp-doctor-card__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.otp-doctor-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.otp-doctor-card__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.otp-doctor-card__spec {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.otp-doctor-card__badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* OTP Hint for demo */
+.otp-hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.otp-hint strong {
+  color: #6366f1;
+  letter-spacing: 2px;
+  font-size: 14px;
+}
+
+/* Doctor preview on login form */
+.doctor-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #f0f9ff, #eff6ff);
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  animation: fadeInUp 0.3s ease;
+}
+
+.doctor-preview__avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.doctor-preview__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.doctor-preview__name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+.doctor-preview__spec {
+  font-size: 12px;
+  color: #3b82f6;
+}
+
+/* Auth hint text */
+.auth-hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #94a3b8;
+  text-align: center;
+  line-height: 1.5;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive for doctor card */
+@media (max-width: 480px) {
+  .otp-doctor-card {
+    max-width: 100%;
+    margin: 12px 0 20px;
+  }
+
+  .doctor-preview {
+    margin-bottom: 12px;
+  }
+}

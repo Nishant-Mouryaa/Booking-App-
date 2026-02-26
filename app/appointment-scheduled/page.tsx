@@ -3,12 +3,24 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import mockData from "@/data/mockData.json";
+import { getDoctorWithOverrides } from "../../utils/getDoctorWithOverrides";
+import type { DoctorSlotConfig } from "../../utils/getDoctorWithOverrides";
 import "./scheduled.css";
 
 export default function AppointmentScheduledPage() {
   const router = useRouter();
   const [appointment, setAppointment] = useState<any>(null);
+  const [doctor, setDoctor] = useState<any>(null);          // ✅ NEW: stateful doctor
+  const [slotConfig, setSlotConfig] = useState<DoctorSlotConfig | null>(null); // ✅ NEW
   const [activeTab, setActiveTab] = useState("appointments");
+
+  // ✅ Helper to load doctor with overrides
+  const loadDoctorData = (doctorId: number) => {
+    const { doctor: mergedDoctor, slotConfig: config } =
+      getDoctorWithOverrides(doctorId);
+    setDoctor(mergedDoctor);
+    setSlotConfig(config);
+  };
 
   useEffect(() => {
     const storedEmail = localStorage.getItem("userEmail");
@@ -17,17 +29,59 @@ export default function AppointmentScheduledPage() {
       return;
     }
 
+    let currentAppointment: any = null;
+
     const lastBooking = localStorage.getItem("lastBooking");
     if (lastBooking) {
-      setAppointment(JSON.parse(lastBooking));
+      currentAppointment = JSON.parse(lastBooking);
     } else if (mockData.appointments.length > 0) {
-      setAppointment(mockData.appointments[0]);
+      currentAppointment = mockData.appointments[0];
     }
+
+    if (currentAppointment) {
+      setAppointment(currentAppointment);
+      // ✅ Load doctor with overrides
+      loadDoctorData(currentAppointment.doctorId);
+    }
+
+    // ✅ Re-read on tab focus
+    const handleFocus = () => {
+      if (currentAppointment) {
+        loadDoctorData(currentAppointment.doctorId);
+      }
+      // Also refresh the appointment itself from localStorage
+      const refreshedBooking = localStorage.getItem("lastBooking");
+      if (refreshedBooking) {
+        const parsed = JSON.parse(refreshedBooking);
+        setAppointment(parsed);
+      }
+    };
+
+    // ✅ Re-read on cross-tab localStorage changes
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "doctorOverrides" && currentAppointment) {
+        loadDoctorData(currentAppointment.doctorId);
+      }
+      if (e.key === "lastBooking") {
+        if (e.newValue) {
+          const parsed = JSON.parse(e.newValue);
+          setAppointment(parsed);
+          loadDoctorData(parsed.doctorId);
+        }
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("focus", handleFocus);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, [router]);
 
   const handleAddToCalendar = () => {
     if (!appointment) return;
-    // Create a calendar event URL (Google Calendar)
     try {
       const dateStr = appointment.date;
       const timeStr = appointment.time;
@@ -42,17 +96,23 @@ export default function AppointmentScheduledPage() {
         const startDate = new Date(dateStr);
         startDate.setHours(hour, min, 0, 0);
         const endDate = new Date(startDate);
-        endDate.setMinutes(endDate.getMinutes() + 30);
+        // ✅ Use slot duration from config if available
+        const duration = slotConfig?.slotDurationMinutes ?? 30;
+        endDate.setMinutes(endDate.getMinutes() + duration);
 
         const formatGCalDate = (d: Date) =>
           d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
 
+        // ✅ Use live doctor data for calendar event
+        const doctorName = doctor?.name || appointment.doctorName;
+        const doctorSpecialty = doctor?.specialty || appointment.doctorSpecialty;
+
         const calUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=Doctor+Appointment+-+${encodeURIComponent(
-          appointment.doctorName
+          doctorName
         )}&dates=${formatGCalDate(startDate)}/${formatGCalDate(
           endDate
         )}&details=${encodeURIComponent(
-          `Appointment with ${appointment.doctorName} (${appointment.doctorSpecialty})\nToken: #${appointment.tokenNumber}`
+          `Appointment with ${doctorName} (${doctorSpecialty})\nToken: #${appointment.tokenNumber}`
         )}`;
 
         window.open(calUrl, "_blank");
@@ -80,7 +140,12 @@ export default function AppointmentScheduledPage() {
 
   const handleShareAppointment = () => {
     if (!appointment) return;
-    const shareText = `🏥 Appointment Confirmed!\n\nDoctor: ${appointment.doctorName}\nSpecialty: ${appointment.doctorSpecialty}\nDate: ${appointment.date}\nTime: ${appointment.time}\nToken: #${appointment.tokenNumber}\nAppointment #: ${appointment.appointmentNumber}`;
+    // ✅ Use live doctor data for sharing
+    const doctorName = doctor?.name || appointment.doctorName;
+    const doctorSpecialty = doctor?.specialty || appointment.doctorSpecialty;
+    const fee = doctor?.consultationFee || appointment.consultationFee || "N/A";
+
+    const shareText = `🏥 Appointment Confirmed!\n\nDoctor: ${doctorName}\nSpecialty: ${doctorSpecialty}\nDate: ${appointment.date}\nTime: ${appointment.time}\nFee: ₹${fee}\nToken: #${appointment.tokenNumber}\nAppointment #: ${appointment.appointmentNumber}`;
 
     if (navigator.share) {
       navigator.share({
@@ -96,15 +161,15 @@ export default function AppointmentScheduledPage() {
 
   const handleCancelBooking = () => {
     if (!appointment) return;
+    const doctorName = doctor?.name || appointment.doctorName;
     if (
       !confirm(
-        `Are you sure you want to cancel your appointment with ${appointment.doctorName}?`
+        `Are you sure you want to cancel your appointment with ${doctorName}?`
       )
     )
       return;
 
     try {
-      // Remove from appointments
       const stored = localStorage.getItem("appointments");
       if (stored) {
         const appointments = JSON.parse(stored);
@@ -116,7 +181,6 @@ export default function AppointmentScheduledPage() {
         localStorage.setItem("appointments", JSON.stringify(updated));
       }
 
-      // Free the booked slot
       const slotsStored = localStorage.getItem("bookedSlots");
       if (slotsStored) {
         const slots = JSON.parse(slotsStored);
@@ -159,69 +223,32 @@ export default function AppointmentScheduledPage() {
       label: "Find",
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z"
-            stroke="currentColor"
-            strokeWidth="2"
-          />
-          <path
-            d="M21 21L16.65 16.65"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
+          <path d="M11 19C15.4183 19 19 15.4183 19 11C19 6.58172 15.4183 3 11 3C6.58172 3 3 6.58172 3 11C3 15.4183 6.58172 19 11 19Z" stroke="currentColor" strokeWidth="2" />
+          <path d="M21 21L16.65 16.65" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
-      action: () => {
-        setActiveTab("find");
-        router.push("/home");
-      },
+      action: () => { setActiveTab("find"); router.push("/home"); },
     },
     {
       id: "appointments",
       label: "Appoint.",
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <rect
-            x="3"
-            y="4"
-            width="18"
-            height="18"
-            rx="2"
-            stroke="currentColor"
-            strokeWidth="2"
-          />
-          <path
-            d="M16 2V6M8 2V6M3 10H21"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
+          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2" />
+          <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
-      action: () => {
-        setActiveTab("appointments");
-        router.push("/appointments");
-      },
+      action: () => { setActiveTab("appointments"); router.push("/appointments"); },
     },
     {
       id: "records",
       label: "Records",
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M9 14L11 16L15 12M7 3H17C18.1046 3 19 3.89543 19 5V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
+          <path d="M9 14L11 16L15 12M7 3H17C18.1046 3 19 3.89543 19 5V19C19 20.1046 18.1046 21 17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       ),
-      action: () => {
-        setActiveTab("records");
-        alert("📋 Medical Records coming soon!");
-      },
+      action: () => { setActiveTab("records"); alert("📋 Medical Records coming soon!"); },
     },
     {
       id: "profile",
@@ -229,18 +256,10 @@ export default function AppointmentScheduledPage() {
       icon: (
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
           <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2" />
-          <path
-            d="M5 20C5 16.6863 7.68629 14 11 14H13C16.3137 14 19 16.6863 19 20"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
+          <path d="M5 20C5 16.6863 7.68629 14 11 14H13C16.3137 14 19 16.6863 19 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
       ),
-      action: () => {
-        setActiveTab("profile");
-        if (confirm("Do you want to logout?")) handleLogout();
-      },
+      action: () => { setActiveTab("profile"); if (confirm("Do you want to logout?")) handleLogout(); },
     },
   ];
 
@@ -249,18 +268,23 @@ export default function AppointmentScheduledPage() {
       <div className="sc">
         <main className="sc-main">
           <div className="sc-container">
-            <p style={{ padding: "40px 20px", textAlign: "center" }}>
-              Loading...
-            </p>
+            <p style={{ padding: "40px 20px", textAlign: "center" }}>Loading...</p>
           </div>
         </main>
       </div>
     );
   }
 
-  const doctor = (mockData.doctors as any[]).find(
-    (d) => d.id === appointment.doctorId
-  );
+  // ✅ Derive display values: prefer live doctor data, fall back to appointment snapshot
+  const displayName = doctor?.name || appointment.doctorName;
+  const displaySpecialty = doctor?.specialty || appointment.doctorSpecialty;
+  const displayQualification = doctor?.qualification || appointment.doctorQualification;
+  const displayImage = doctor?.image || null;
+  const displayRating = doctor?.rating || null;
+  const displayExperience = doctor?.experience || null;
+  const displayFee = doctor?.consultationFee || appointment.consultationFee || null;
+  const displayMaxPerSlot = slotConfig?.maxPatientsPerSlot ?? 1;
+  const displayAppointmentType = slotConfig?.appointmentType ?? "individual";
 
   const formatDateDisplay = (dateStr: string): string => {
     try {
@@ -283,27 +307,15 @@ export default function AppointmentScheduledPage() {
         <header className="sc-topbar">
           <div className="sc-container sc-topbar__inner">
             <div className="sc-topbar__left">
-              <button
-                className="sc-back-btn"
-                onClick={() => router.push("/home")}
-              >
+              <button className="sc-back-btn" onClick={() => router.push("/home")}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path
-                    d="M12.5 15L7.5 10L12.5 5"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
               <h1 className="sc-topbar__title">Appointment Scheduled</h1>
             </div>
             <div className="sc-topbar__right">
-              <button
-                className="sc-topbar__btn"
-                onClick={handleShareAppointment}
-              >
+              <button className="sc-topbar__btn" onClick={handleShareAppointment}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2" />
                   <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
@@ -312,42 +324,16 @@ export default function AppointmentScheduledPage() {
                 </svg>
                 <span>Share</span>
               </button>
-              <button
-                className="sc-topbar__btn"
-                onClick={() => router.push("/home")}
-              >
+              <button className="sc-topbar__btn" onClick={() => router.push("/home")}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <polyline
-                    points="9,22 9,12 15,12 15,22"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <polyline points="9,22 9,12 15,12 15,22" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <span>Home</span>
               </button>
-              <button
-                className="sc-topbar__btn sc-topbar__btn--logout"
-                onClick={() => {
-                  if (confirm("Logout?")) handleLogout();
-                }}
-              >
+              <button className="sc-topbar__btn sc-topbar__btn--logout" onClick={() => { if (confirm("Logout?")) handleLogout(); }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                  <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <span>Logout</span>
               </button>
@@ -361,31 +347,14 @@ export default function AppointmentScheduledPage() {
           <div className="sc-container">
             <section className="sc-hero">
               <div className="sc-hero__check">
-                <svg
-                  width="52"
-                  height="52"
-                  viewBox="0 0 52 52"
-                  fill="none"
-                >
-                  <circle
-                    cx="26"
-                    cy="26"
-                    r="22"
-                    fill="rgba(255,255,255,0.18)"
-                  />
-                  <path
-                    d="M17 26L23 32L37 20"
-                    stroke="#fff"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
+                <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+                  <circle cx="26" cy="26" r="22" fill="rgba(255,255,255,0.18)" />
+                  <path d="M17 26L23 32L37 20" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <h2 className="sc-hero__title">Booking Confirmed!</h2>
               <p className="sc-hero__desc">
-                Your appointment has been successfully scheduled. We&apos;ve
-                sent a confirmation to your email.
+                Your appointment has been successfully scheduled. We&apos;ve sent a confirmation to your email.
               </p>
               <div className="sc-hero__stats">
                 <div className="sc-hero__stat">
@@ -396,10 +365,7 @@ export default function AppointmentScheduledPage() {
                 <div className="sc-hero__stat">
                   <strong>
                     {appointment.date
-                      ? new Date(appointment.date).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                        })
+                      ? new Date(appointment.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
                       : appointment.reportingTime?.split(" ")[0] || "Tomorrow"}
                   </strong>
                   <span>Date</span>
@@ -418,54 +384,47 @@ export default function AppointmentScheduledPage() {
             <div className="sc-grid">
               {/* ---- Left Column ---- */}
               <div className="sc-grid__col">
-                {/* Doctor Card */}
+                {/* ✅ Doctor Card — uses live data */}
                 <article className="sc-card sc-doctor">
                   <div className="sc-doctor__img-wrap">
-                    {doctor?.image ? (
-                      <img
-                        src={doctor.image}
-                        alt={appointment.doctorName}
-                        className="sc-doctor__img"
-                      />
+                    {displayImage ? (
+                      <img src={displayImage} alt={displayName} className="sc-doctor__img" />
                     ) : (
                       <div className="sc-doctor__img-ph">
-                        {appointment.doctorName
-                          .split(" ")
-                          .map((n: string) => n[0])
-                          .join("")}
+                        {displayName.split(" ").map((n: string) => n[0]).join("")}
                       </div>
                     )}
                     <span className="sc-doctor__dot" />
                   </div>
                   <div className="sc-doctor__body">
-                    <h3 className="sc-doctor__name">
-                      {appointment.doctorName}
-                    </h3>
-                    <p className="sc-doctor__spec">
-                      {appointment.doctorSpecialty}
-                    </p>
-                    <p className="sc-doctor__qual">
-                      {appointment.doctorQualification}
-                    </p>
-                    {doctor && (
-                      <div className="sc-doctor__meta">
+                    <h3 className="sc-doctor__name">{displayName}</h3>
+                    <p className="sc-doctor__spec">{displaySpecialty}</p>
+                    <p className="sc-doctor__qual">{displayQualification}</p>
+                    <div className="sc-doctor__meta">
+                      {displayRating && (
                         <span className="sc-doctor__rating">
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="#FBBF24"
-                          >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="#FBBF24">
                             <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
                           </svg>
-                          {doctor.rating}
+                          {displayRating}
                         </span>
-                        <span className="sc-doctor__exp">
-                          {doctor.experience} yrs exp
-                        </span>
-                        <span className="sc-doctor__fee">
-                          ₹{doctor.consultationFee}
-                        </span>
+                      )}
+                      {displayExperience && (
+                        <span className="sc-doctor__exp">{displayExperience} yrs exp</span>
+                      )}
+                      {displayFee && (
+                        <span className="sc-doctor__fee">₹{displayFee}</span>
+                      )}
+                    </div>
+                    {/* ✅ Show group appointment info */}
+                    {displayAppointmentType === "group" && displayMaxPerSlot > 1 && (
+                      <div className="sc-doctor__group-info">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                          <circle cx="9" cy="7" r="3" stroke="currentColor" strokeWidth="1.5" />
+                          <circle cx="17" cy="7" r="3" stroke="currentColor" strokeWidth="1.5" />
+                          <path d="M2 20c0-3 2.5-5.5 7-5.5s7 2.5 7 5.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                        </svg>
+                        <span>Group slot — up to {displayMaxPerSlot} patients per slot</span>
                       </div>
                     )}
                   </div>
@@ -474,27 +433,9 @@ export default function AppointmentScheduledPage() {
                 {/* Details Card */}
                 <div className="sc-card">
                   <h3 className="sc-card__head">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <rect
-                        x="3"
-                        y="4"
-                        width="18"
-                        height="18"
-                        rx="2"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M16 2V6M8 2V6M3 10H21"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                     Appointment Details
                   </h3>
@@ -502,110 +443,62 @@ export default function AppointmentScheduledPage() {
                   <div className="sc-info-grid">
                     <div className="sc-info-item">
                       <span className="sc-info-label">Status</span>
-                      <span
-                        className={`sc-badge ${
-                          appointment.status === "active"
-                            ? "sc-badge--green"
-                            : ""
-                        }`}
-                      >
-                        {appointment.status.charAt(0).toUpperCase() +
-                          appointment.status.slice(1)}
+                      <span className={`sc-badge ${appointment.status === "active" ? "sc-badge--green" : ""}`}>
+                        {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                       </span>
                     </div>
                     <div className="sc-info-item">
                       <span className="sc-info-label">Date</span>
                       <span className="sc-info-value">
-                        {appointment.date
-                          ? formatDateDisplay(appointment.date)
-                          : "—"}
+                        {appointment.date ? formatDateDisplay(appointment.date) : "—"}
                       </span>
                     </div>
                     <div className="sc-info-item">
                       <span className="sc-info-label">Time Slot</span>
-                      <span className="sc-info-value">
-                        {appointment.time || "—"}
-                      </span>
+                      <span className="sc-info-value">{appointment.time || "—"}</span>
                     </div>
                     <div className="sc-info-item">
                       <span className="sc-info-label">Reporting Time</span>
-                      <span className="sc-info-value">
-                        {appointment.reportingTime}
-                      </span>
+                      <span className="sc-info-value">{appointment.reportingTime}</span>
                     </div>
                     <div className="sc-info-item">
                       <span className="sc-info-label">Token Number</span>
-                      <span className="sc-info-value">
-                        #{appointment.tokenNumber || "—"}
-                      </span>
+                      <span className="sc-info-value">#{appointment.tokenNumber || "—"}</span>
                     </div>
                     <div className="sc-info-item">
                       <span className="sc-info-label">Payment</span>
-                      <span
-                        className={`sc-badge ${
-                          appointment.paymentStatus === "paid"
-                            ? "sc-badge--green"
-                            : "sc-badge--amber"
-                        }`}
-                      >
-                        {appointment.paymentStatus === "paid"
-                          ? "Paid"
-                          : "Not Paid"}
+                      <span className={`sc-badge ${appointment.paymentStatus === "paid" ? "sc-badge--green" : "sc-badge--amber"}`}>
+                        {appointment.paymentStatus === "paid" ? "Paid" : "Not Paid"}
                       </span>
                     </div>
+                    {/* ✅ Show consultation fee from live doctor data */}
+                    {displayFee && (
+                      <div className="sc-info-item">
+                        <span className="sc-info-label">Consultation Fee</span>
+                        <span className="sc-info-value">₹{displayFee}</span>
+                      </div>
+                    )}
+                    {/* ✅ Show slot duration if configured */}
+                    {slotConfig?.slotDurationMinutes && (
+                      <div className="sc-info-item">
+                        <span className="sc-info-label">Slot Duration</span>
+                        <span className="sc-info-value">{slotConfig.slotDurationMinutes} min</span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="sc-card__btn-row">
-                    <button
-                      className="sc-outline-btn"
-                      onClick={handleAddToCalendar}
-                    >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                      >
-                        <rect
-                          x="3"
-                          y="4"
-                          width="14"
-                          height="14"
-                          rx="2"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <path
-                          d="M13 2V6M7 2V6M3 8H17"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
+                    <button className="sc-outline-btn" onClick={handleAddToCalendar}>
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                        <rect x="3" y="4" width="14" height="14" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                        <path d="M13 2V6M7 2V6M3 8H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                       </svg>
                       Add to Calendar
                     </button>
-                    <button
-                      className="sc-outline-btn sc-outline-btn--danger"
-                      onClick={handleCancelBooking}
-                    >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />                        <path
-                          d="M15 9l-6 6M9 9l6 6"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
+                    <button className="sc-outline-btn sc-outline-btn--danger" onClick={handleCancelBooking}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
+                        <path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                       </svg>
                       Cancel Booking
                     </button>
@@ -618,97 +511,37 @@ export default function AppointmentScheduledPage() {
                 {/* Patient Details */}
                 <div className="sc-card">
                   <h3 className="sc-card__head">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="8"
-                        r="4"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M5 20C5 16.6863 7.68629 14 11 14H13C16.3137 14 19 16.6863 19 20"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M5 20C5 16.6863 7.68629 14 11 14H13C16.3137 14 19 16.6863 19 20" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                     Patient Details
                   </h3>
                   <p className="sc-card__desc">
-                    Add patient information for a smoother check-in experience
-                    at the clinic.
+                    Add patient information for a smoother check-in experience at the clinic.
                   </p>
-                  <button
-                    className="sc-dashed-btn"
-                    onClick={handleAddPatientDetails}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                    >
-                      <path
-                        d="M10 4V16M4 10H16"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                      />
+                  <button className="sc-dashed-btn" onClick={handleAddPatientDetails}>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path d="M10 4V16M4 10H16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                     Add Patient Details
                   </button>
                 </div>
 
-                {/* Slot Info Card */}
+                {/* ✅ Slot Info Card — updated for group slots */}
                 <div className="sc-card sc-slot-info">
                   <h3 className="sc-card__head">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <path
-                        d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M12 6V12L16 14"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                     Your Reserved Slot
                   </h3>
                   <div className="sc-slot-info__content">
                     <div className="sc-slot-info__badge">
-                      <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <path
-                          d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z"
-                          fill="#DCFCE7"
-                          stroke="#16A34A"
-                          strokeWidth="1.5"
-                        />
-                        <path
-                          d="M8 12L11 15L16 9"
-                          stroke="#16A34A"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22Z" fill="#DCFCE7" stroke="#16A34A" strokeWidth="1.5" />
+                        <path d="M8 12L11 15L16 9" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                       <span>Slot Reserved</span>
                     </div>
@@ -716,40 +549,25 @@ export default function AppointmentScheduledPage() {
                       Your time slot on{" "}
                       <strong>
                         {appointment.date
-                          ? new Date(appointment.date).toLocaleDateString(
-                              "en-IN",
-                              { weekday: "short", month: "short", day: "numeric" }
-                            )
+                          ? new Date(appointment.date).toLocaleDateString("en-IN", {
+                              weekday: "short", month: "short", day: "numeric",
+                            })
                           : "—"}
                       </strong>{" "}
                       at <strong>{appointment.time || "—"}</strong> has been
-                      reserved exclusively for you. This slot is now blocked and
-                      cannot be booked by other patients.
+                      reserved for you.
+                      {/* ✅ Different messaging for group vs individual */}
+                      {displayAppointmentType === "group" && displayMaxPerSlot > 1
+                        ? ` This is a group slot accommodating up to ${displayMaxPerSlot} patients.`
+                        : " This slot is now blocked and cannot be booked by other patients."}
                     </p>
                     <div className="sc-slot-info__note">
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                      >
-                        <circle
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                        />
-                        <path
-                          d="M12 8v4m0 4h.01"
-                          stroke="currentColor"
-                          strokeWidth="1.5"
-                          strokeLinecap="round"
-                        />
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
+                        <path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                       </svg>
                       <span>
-                        If you cancel, this slot will become available for
-                        others to book.
+                        If you cancel, this slot will become available for others to book.
                       </span>
                     </div>
                   </div>
@@ -758,25 +576,9 @@ export default function AppointmentScheduledPage() {
                 {/* What's Next */}
                 <div className="sc-card sc-next">
                   <h3 className="sc-card__head">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                      />
-                      <path
-                        d="M12 8v4l3 1.5"
-                        stroke="currentColor"
-                        strokeWidth="1.5"
-                        strokeLinecap="round"
-                      />
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M12 8v4l3 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                     </svg>
                     What&apos;s Next?
                   </h3>
@@ -815,16 +617,10 @@ export default function AppointmentScheduledPage() {
         {/* Footer */}
         <div className="sc-footer">
           <div className="sc-container sc-footer__inner">
-            <button
-              className="sc-footer__btn sc-footer__btn--secondary"
-              onClick={() => router.push("/home")}
-            >
+            <button className="sc-footer__btn sc-footer__btn--secondary" onClick={() => router.push("/home")}>
               Back to Home
             </button>
-            <button
-              className="sc-footer__btn sc-footer__btn--primary"
-              onClick={handleViewAppointment}
-            >
+            <button className="sc-footer__btn sc-footer__btn--primary" onClick={handleViewAppointment}>
               View My Appointments
             </button>
           </div>
@@ -836,9 +632,7 @@ export default function AppointmentScheduledPage() {
         {navItems.map((item) => (
           <button
             key={item.id}
-            className={`sc-bottom__item ${
-              activeTab === item.id ? "sc-bottom__item--active" : ""
-            }`}
+            className={`sc-bottom__item ${activeTab === item.id ? "sc-bottom__item--active" : ""}`}
             onClick={item.action}
           >
             {item.icon}

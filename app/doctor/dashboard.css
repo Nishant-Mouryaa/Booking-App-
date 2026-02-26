@@ -1,0 +1,908 @@
+.dd {
+  display: flex;
+  min-height: 100vh;
+  background: radial-gradient(circle at top left, #eff6ff 0, #f9fafb 42%, #ffffff 100%);
+  color: #0f172a;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", sans-serif;
+}
+
+.dd-sidebar {
+  width: 260px;
+  padding: 20px 18px;
+  border-right: 1px solid rgba(148, 163, 184, 0.28);
+  background: linear-gradient(180deg, #0f172a 0%, #020617 65%, #020617 100%);
+  color: #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.dd-sidebar__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dd-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dd-sidebar__logo {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 0, #38bdf8, #3b82f6);
+  color: white;
+}
+
+.dd-sidebar__logo span {
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.dd-sidebar__title {
+  display: flex;
+  flex-direction: column;
+}
+
+.dd-sidebar__title-main {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.dd-sidebar__title-sub {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.dd-sidebar__nav {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dd-sidebar__link {
+  border-radius: 999px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.dd-sidebar__link svg {
+  flex-shrink: 0;
+}
+
+.dd-sidebar__link--active {
+  background: linear-gradient(90deg, #38bdf8, #3b82f6);
+  color: #f9fafb;
+}
+
+.dd-sidebar__link:not(.dd-sidebar__link--active):hover {
+  background: rgba(15, 23, 42, 0.7);
+  color: #e5e7eb;
+}
+
+.dd-sidebar__user {
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid rgba(51, 65, 85, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.dd-sidebar__user-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dd-sidebar__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  background: radial-gradient(circle at 30% 0, #4ade80, #22c55e);
+}
+
+.dd-sidebar__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dd-sidebar__user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.dd-sidebar__user-name {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.dd-sidebar__user-role {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.dd-sidebar__logout {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  background: rgba(15, 23, 42, 0.7);
+  color: #e5e7eb;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.dd-sidebar__logout:hover {
+  background: #ef4444;
+  border-color: #fecaca;
+  color: white;
+}
+
+.dd-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dd-topbar {
+  padding: 18px 24px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dd-topbar__left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dd-topbar__title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.dd-topbar__subtitle {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.dd-topbar__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dd-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.08);
+  color: #16a34a;
+  font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dd-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #22c55e;
+}
+
+.dd-main-scroll {
+  padding: 6px 24px 20px;
+  overflow-y: auto;
+}
+
+.dd-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr);
+  gap: 18px;
+}
+
+.dd-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 18px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  padding: 16px 16px 14px;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08);
+}
+
+.dd-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.dd-card__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.dd-card__title svg {
+  color: #2563eb;
+}
+
+.dd-card__subtitle {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.dd-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dd-profile {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.dd-profile__avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 26px;
+  border: 1px dashed rgba(148, 163, 184, 0.9);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 0, #bfdbfe, #eff6ff);
+  color: #1f2937;
+  font-weight: 600;
+  font-size: 30px;
+}
+
+.dd-profile__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dd-profile__avatar-badge {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.dd-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.dd-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dd-label {
+  font-size: 12px;
+  color: #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dd-label span:last-child {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.dd-input,
+.dd-select,
+.dd-textarea {
+  border-radius: 10px;
+  border: 1px solid rgba(209, 213, 219, 0.95);
+  padding: 7px 9px;
+  font-size: 13px;
+  outline: none;
+  background: rgba(248, 250, 252, 0.9);
+  color: #111827;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.dd-input:focus,
+.dd-select:focus,
+.dd-textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px rgba(37, 99, 235, 0.25);
+  background: #ffffff;
+}
+
+.dd-textarea {
+  min-height: 68px;
+  resize: vertical;
+}
+
+.dd-help {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.dd-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dd-chip {
+  border-radius: 999px;
+  border: 1px solid rgba(209, 213, 219, 0.9);
+  padding: 3px 9px;
+  font-size: 11px;
+  background: #f9fafb;
+  color: #374151;
+}
+
+.dd-rating {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.dd-rating__value {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.dd-rating__stars {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #fbbf24;
+}
+
+.dd-rating__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.dd-slots-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 14px;
+}
+
+.dd-quick-guide {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 9px;
+  border-radius: 12px;
+  background: #eff6ff;
+  border: 1px dashed rgba(59, 130, 246, 0.4);
+  font-size: 11px;
+  color: #1d4ed8;
+}
+
+.dd-quick-guide__title {
+  font-weight: 600;
+}
+
+.dd-quick-guide__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 6px;
+}
+
+.dd-quick-guide__item span:first-child {
+  font-weight: 500;
+}
+
+.dd-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 8px;
+}
+
+.dd-slot-preview {
+  margin-top: 6px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px dashed rgba(209, 213, 219, 0.9);
+  font-size: 11px;
+  color: #4b5563;
+}
+
+.dd-slot-preview__chips {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dd-slot-chip {
+  border-radius: 999px;
+  background: #e5f0ff;
+  padding: 2px 8px;
+  font-size: 10px;
+  color: #1d4ed8;
+}
+
+.dd-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.dd-contact-pill {
+  margin-top: 6px;
+  padding: 7px 8px;
+  border-radius: 999px;
+  border: 1px dashed rgba(209, 213, 219, 0.9);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.dd-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.dd-btn {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  background: #ffffff;
+  padding: 6px 12px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.dd-btn--primary {
+  border-color: transparent;
+  background: linear-gradient(90deg, #2563eb, #4f46e5);
+  color: white;
+  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.34);
+}
+
+.dd-btn--primary:hover {
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.42);
+}
+
+.dd-btn--ghost {
+  background: rgba(248, 250, 252, 0.9);
+}
+
+.dd-btn--ghost:hover {
+  background: #e5e7eb;
+}
+
+.dd-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.dd-pill {
+  border-radius: 999px;
+  padding: 3px 9px;
+  font-size: 11px;
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.dd-pill--accent {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.dd-badge-small {
+  border-radius: 999px;
+  padding: 2px 7px;
+  font-size: 10px;
+  background: #ecfdf3;
+  color: #15803d;
+}
+
+@media (max-width: 960px) {
+  .dd-sidebar {
+    display: none;
+  }
+  .dd-main {
+    padding-top: 8px;
+  }
+  .dd-topbar {
+    padding-inline: 16px;
+  }
+  .dd-main-scroll {
+    padding-inline: 16px;
+  }
+  .dd-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dd-profile {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dd-slots-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dd-contact-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* =============================================
+   AVAILABILITY TOGGLE — ANIMATION FIX
+   ============================================= */
+.dd-availability-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 8px 6px 14px;
+  border-radius: 999px;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  user-select: none;
+}
+
+.dd-availability-toggle--online {
+  background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+  border: 1px solid #86efac;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.08);
+}
+
+.dd-availability-toggle--offline {
+  background: linear-gradient(135deg, #fef2f2, #fee2e2);
+  border: 1px solid #fca5a5;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.06);
+}
+
+.dd-availability-toggle__info {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+/* =============================================
+   STATUS DOT — SINGLE CLEAN PULSE
+   ============================================= */
+.dd-availability-toggle__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dd-availability-toggle--online .dd-availability-toggle__dot {
+  background: #22c55e;
+  animation: dd-dot-pulse 2s ease-in-out infinite;
+}
+
+.dd-availability-toggle--offline .dd-availability-toggle__dot {
+  background: #ef4444;
+  animation: none;
+}
+
+/* One single keyframe — no pseudo-element conflict */
+@keyframes dd-dot-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(34, 197, 94, 0);
+  }
+}
+
+.dd-availability-toggle__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition: color 0.3s ease;
+}
+
+.dd-availability-toggle--online .dd-availability-toggle__label {
+  color: #15803d;
+}
+
+.dd-availability-toggle--offline .dd-availability-toggle__label {
+  color: #b91c1c;
+}
+
+/* =============================================
+   TOGGLE SWITCH — CLEAN SPRING ANIMATION
+   ============================================= */
+.dd-toggle {
+  position: relative;
+  width: 50px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  flex-shrink: 0;
+  outline: none;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dd-toggle:focus-visible {
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35);
+}
+
+.dd-toggle--on {
+  background: #22c55e;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.dd-toggle--off {
+  background: #d1d5db;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.dd-toggle--off:hover {
+  background: #bfc5cd;
+}
+
+.dd-toggle--on:hover {
+  background: #1db954;
+}
+
+.dd-toggle__track {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: 999px;
+}
+
+.dd-toggle__thumb {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), 0 1px 2px rgba(0, 0, 0, 0.06);
+  /* 
+     KEY FIX: Use a proper spring curve but only on transform.
+     Avoid will-change to prevent compositing bugs.
+  */
+  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+  pointer-events: none;
+}
+
+.dd-toggle--on .dd-toggle__thumb {
+  transform: translateX(24px);
+}
+
+.dd-toggle--off .dd-toggle__thumb {
+  transform: translateX(3px);
+}
+
+/* Squish on press — only width + border-radius, 
+   separate transition so it doesn't fight the slide */
+.dd-toggle:active .dd-toggle__thumb {
+  width: 26px;
+  border-radius: 11px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              width 0.12s ease,
+              border-radius 0.12s ease;
+}
+
+.dd-toggle--on:active .dd-toggle__thumb {
+  transform: translateX(20px);
+}
+
+.dd-toggle--off:active .dd-toggle__thumb {
+  transform: translateX(3px);
+}
+
+/* =============================================
+   UNAVAILABLE BANNER
+   ============================================= */
+.dd-unavailable-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #fef2f2, #fff1f2);
+  border: 1px solid #fecaca;
+  border-left: 4px solid #ef4444;
+  border-radius: 14px;
+  /* 
+     FIX: Simple fade-in only. The translateY was causing 
+     layout shift on re-renders. 
+  */
+  animation: dd-banner-fade 0.3s ease;
+}
+
+@keyframes dd-banner-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.dd-unavailable-banner__content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #991b1b;
+}
+
+.dd-unavailable-banner__content svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: #ef4444;
+}
+
+.dd-unavailable-banner__content strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.dd-unavailable-banner__content p {
+  font-size: 12px;
+  color: #b91c1c;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.dd-unavailable-banner__btn {
+  padding: 8px 22px;
+  background: #22c55e;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(34, 197, 94, 0.25);
+}
+
+.dd-unavailable-banner__btn:hover {
+  background: #16a34a;
+  box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+}
+
+/* =============================================
+   PROFILE STATUS DOT
+   ============================================= */
+.dd-profile__avatar {
+  position: relative;
+}
+
+.dd-profile__status-dot {
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  transition: background 0.3s ease;
+}
+
+.dd-profile__status-dot--online {
+  background: #22c55e;
+}
+
+.dd-profile__status-dot--offline {
+  background: #ef4444;
+}
+
+/* =============================================
+   PILL VARIANTS
+   ============================================= */
+.dd-pill--green {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+}
+
+.dd-pill--red {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 768px) {
+  .dd-availability-toggle {
+    padding: 5px 6px 5px 12px;
+    gap: 10px;
+  }
+
+  .dd-availability-toggle__label {
+    font-size: 11px;
+  }
+
+  .dd-toggle {
+    width: 42px;
+    height: 24px;
+  }
+
+  .dd-toggle__thumb {
+    width: 18px;
+    height: 18px;
+    top: 3px;
+  }
+
+  .dd-toggle--on .dd-toggle__thumb {
+    transform: translateX(20px);
+  }
+
+  .dd-toggle--off .dd-toggle__thumb {
+    transform: translateX(3px);
+  }
+
+  .dd-toggle:active .dd-toggle__thumb {
+    width: 22px;
+  }
+
+  .dd-toggle--on:active .dd-toggle__thumb {
+    transform: translateX(16px);
+  }
+
+  .dd-unavailable-banner {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
