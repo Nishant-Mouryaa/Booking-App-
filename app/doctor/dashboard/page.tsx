@@ -399,7 +399,7 @@ useEffect(() => {
                       <input
                         className="dd-input"
                         placeholder="City, State"
-                        value={overrides.location ?? doctor.location ?? ""}
+                        value={overrides.location ?? mergedDoctor.location ?? ""}
                         onChange={(e) => handleFieldChange("location", e.target.value)}
                       />
                     </div>
