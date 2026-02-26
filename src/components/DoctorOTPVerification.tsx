@@ -51,7 +51,7 @@ const DoctorOTPVerification = ({
   useEffect(() => {
     if (timer > 0) {
       const interval = setInterval(() => {
-        setTimer((prev) => {
+        setTimer((prev: number) => {
           if (prev <= 1) {
             setCanResend(true);
             return 0;
