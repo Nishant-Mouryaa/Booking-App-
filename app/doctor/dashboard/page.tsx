@@ -35,7 +35,7 @@ interface DoctorOverrides {
   about?: string;
   consultationFee?: number;
   timing?: string;
-  available?: boolean;                          // ✅ NEW
+  available?: boolean;
   availabilityDays?: string;
   availabilityHours?: string;
   contactEmail?: string;
@@ -68,41 +68,264 @@ const saveOverrides = (data: OverridesStore) => {
   }
 };
 
+// ─── Day Picker Component ──────────────────────────────────────────────────────
+const WEEK_DAYS = [
+  { short: "Mon", long: "Monday" },
+  { short: "Tue", long: "Tuesday" },
+  { short: "Wed", long: "Wednesday" },
+  { short: "Thu", long: "Thursday" },
+  { short: "Fri", long: "Friday" },
+  { short: "Sat", long: "Saturday" },
+  { short: "Sun", long: "Sunday" },
+];
+
+function parseDaysString(raw: string): string[] {
+  // Accepts: "Mon-Fri", "Mon, Wed, Fri", "Monday to Friday", individual day names
+  const normalized = raw.trim();
+
+  // Range: "Mon-Fri" or "Monday-Friday"
+  const rangeMatch = normalized.match(/^(\w+)\s*[-–to]+\s*(\w+)$/i);
+  if (rangeMatch) {
+    const from = WEEK_DAYS.findIndex(
+      (d) =>
+        d.short.toLowerCase() === rangeMatch[1].toLowerCase().slice(0, 3) ||
+        d.long.toLowerCase() === rangeMatch[1].toLowerCase()
+    );
+    const to = WEEK_DAYS.findIndex(
+      (d) =>
+        d.short.toLowerCase() === rangeMatch[2].toLowerCase().slice(0, 3) ||
+        d.long.toLowerCase() === rangeMatch[2].toLowerCase()
+    );
+    if (from !== -1 && to !== -1) {
+      const result: string[] = [];
+      for (let i = from; i <= to; i++) result.push(WEEK_DAYS[i].short);
+      return result;
+    }
+  }
+
+  // Comma / space separated
+  return normalized
+    .split(/[,\s]+/)
+    .map((token) => {
+      const found = WEEK_DAYS.find(
+        (d) =>
+          d.short.toLowerCase() === token.toLowerCase().slice(0, 3) ||
+          d.long.toLowerCase() === token.toLowerCase()
+      );
+      return found?.short ?? null;
+    })
+    .filter(Boolean) as string[];
+}
+
+function formatDaysString(days: string[]): string {
+  if (days.length === 0) return "";
+  if (days.length === 1) return days[0];
+
+  // Check if it is a contiguous range
+  const indices = days.map((d) => WEEK_DAYS.findIndex((w) => w.short === d));
+  indices.sort((a, b) => a - b);
+  const isRange = indices.every((idx, i) => i === 0 || idx === indices[i - 1] + 1);
+  if (isRange && days.length > 2) {
+    return `${WEEK_DAYS[indices[0]].short}-${WEEK_DAYS[indices[indices.length - 1]].short}`;
+  }
+  return days.join(", ");
+}
+
+interface DayPickerProps {
+  value: string;           // raw string like "Mon-Fri"
+  onChange: (newVal: string) => void;
+}
+
+function DayPicker({ value, onChange }: DayPickerProps) {
+  const selected = useMemo(() => parseDaysString(value), [value]);
+
+  const toggle = (short: string) => {
+    const next = selected.includes(short)
+      ? selected.filter((d) => d !== short)
+      : [...selected, short];
+    // Keep original week order
+    const ordered = WEEK_DAYS.map((d) => d.short).filter((s) => next.includes(s));
+    onChange(formatDaysString(ordered));
+  };
+
+  return (
+    <div className="dp-wrapper">
+      {WEEK_DAYS.map((day) => {
+        const active = selected.includes(day.short);
+        return (
+          <button
+            key={day.short}
+            type="button"
+            title={day.long}
+            className={`dp-day ${active ? "dp-day--active" : ""}`}
+            onClick={() => toggle(day.short)}
+          >
+            {day.short}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Time Range Picker Component ───────────────────────────────────────────────
+const TIME_PRESETS = [
+  { label: "Morning", start: "06:00", end: "12:00" },
+  { label: "Afternoon", start: "12:00", end: "17:00" },
+  { label: "Evening", start: "17:00", end: "21:00" },
+  { label: "Full Day", start: "08:00", end: "20:00" },
+];
+
+function formatTimeLabel(t: string): string {
+  const [h, m] = t.split(":").map(Number);
+  const ampm = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${hour}:${m.toString().padStart(2, "0")} ${ampm}`;
+}
+
+function parseHoursString(raw: string): { start: string; end: string } {
+  // Accepts: "9 AM - 5 PM", "09:00-17:00", "9:00 AM – 5:00 PM"
+  const clean = raw.replace(/–/g, "-").trim();
+  const parts = clean.split(/\s*-\s*/);
+  if (parts.length === 2) {
+    const parseTime = (s: string): string => {
+      s = s.trim();
+      // Already 24h HH:MM
+      const hhmm = s.match(/^(\d{1,2}):(\d{2})$/);
+      if (hhmm) return `${hhmm[1].padStart(2, "0")}:${hhmm[2]}`;
+      // 12h format
+      const ampm = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+      if (ampm) {
+        let h = parseInt(ampm[1]);
+        const m = ampm[2] ? parseInt(ampm[2]) : 0;
+        const meridiem = ampm[3].toUpperCase();
+        if (meridiem === "PM" && h !== 12) h += 12;
+        if (meridiem === "AM" && h === 12) h = 0;
+        return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`;
+      }
+      // bare number
+      const bare = s.match(/^(\d{1,2})$/);
+      if (bare) return `${bare[1].padStart(2, "0")}:00`;
+      return "09:00";
+    };
+    return { start: parseTime(parts[0]), end: parseTime(parts[1]) };
+  }
+  return { start: "09:00", end: "17:00" };
+}
+
+function formatHoursString(start: string, end: string): string {
+  return `${formatTimeLabel(start)} - ${formatTimeLabel(end)}`;
+}
+
+interface TimeRangePickerProps {
+  value: string;          // raw string like "9 AM - 5 PM"
+  onChange: (newVal: string) => void;
+}
+
+function TimeRangePicker({ value, onChange }: TimeRangePickerProps) {
+  const { start, end } = useMemo(() => parseHoursString(value), [value]);
+
+  const setStart = (v: string) => onChange(formatHoursString(v, end));
+  const setEnd = (v: string) => onChange(formatHoursString(start, v));
+
+  const applyPreset = (preset: (typeof TIME_PRESETS)[number]) => {
+    onChange(formatHoursString(preset.start, preset.end));
+  };
+
+  const isActivePreset = (p: (typeof TIME_PRESETS)[number]) =>
+    p.start === start && p.end === end;
+
+  return (
+    <div className="trp-wrapper">
+      {/* Presets */}
+      <div className="trp-presets">
+        {TIME_PRESETS.map((p) => (
+          <button
+            key={p.label}
+            type="button"
+            className={`trp-preset ${isActivePreset(p) ? "trp-preset--active" : ""}`}
+            onClick={() => applyPreset(p)}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Custom range */}
+      <div className="trp-range">
+        <div className="trp-range-field">
+          <span className="trp-range-label">From</span>
+          <input
+            type="time"
+            className="dd-input trp-time-input"
+            value={start}
+            onChange={(e) => setStart(e.target.value)}
+          />
+          <span className="trp-range-display">{formatTimeLabel(start)}</span>
+        </div>
+
+        <div className="trp-divider">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+
+        <div className="trp-range-field">
+          <span className="trp-range-label">To</span>
+          <input
+            type="time"
+            className="dd-input trp-time-input"
+            value={end}
+            onChange={(e) => setEnd(e.target.value)}
+          />
+          <span className="trp-range-display">{formatTimeLabel(end)}</span>
+        </div>
+      </div>
+
+      {/* Visual summary pill */}
+      <div className="trp-summary">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.6" />
+          <path d="M12 6v6l4 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+        </svg>
+        <span>
+          Patients will see: <strong>{formatHoursString(start, end)}</strong>
+        </span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function DoctorDashboardPage() {
   const router = useRouter();
-const [doctor, setDoctor] = useState<Doctor | null>(null);
-const [overrides, setOverrides] = useState<DoctorOverrides>({});
-const [saving, setSaving] = useState(false);
-const [authChecked, setAuthChecked] = useState(false);
-const [doctorIdState, setDoctorId] = useState<number | null>(null);
+  const [doctor, setDoctor] = useState<Doctor | null>(null);
+  const [overrides, setOverrides] = useState<DoctorOverrides>({});
+  const [saving, setSaving] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
 
-const doctorId = useMemo(() => {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem("doctorId");
-  return raw ? Number(raw) : null;
-}, []);
+  const doctorId = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem("doctorId");
+    return raw ? Number(raw) : null;
+  }, []);
 
-useEffect(() => {
-  setAuthChecked(true);
-}, [router]);
+  useEffect(() => {
+    setAuthChecked(true);
+  }, [router]);
 
-useEffect(() => {
-  if (!authChecked) return;
-  if (!doctorId) return;
-
-  const base = (mockData.doctors as Doctor[]).find(
-    (d) => d.id === doctorId
-  );
-  if (!base) {
-    router.replace("/doctor/login");
-    return;
-  }
-  setDoctor(base);
-
-  const store = loadOverrides();
-  setOverrides(store[doctorId] || {});
-}, [doctorId, authChecked, router]);
-
+  useEffect(() => {
+    if (!authChecked) return;
+    if (!doctorId) return;
+    const base = (mockData.doctors as Doctor[]).find((d) => d.id === doctorId);
+    if (!base) {
+      router.replace("/doctor/login");
+      return;
+    }
+    setDoctor(base);
+    const store = loadOverrides();
+    setOverrides(store[doctorId] || {});
+  }, [doctorId, authChecked, router]);
 
   const mergedDoctor = useMemo(() => {
     if (!doctor) return null;
@@ -114,7 +337,7 @@ useEffect(() => {
       experience: overrides.experience ?? doctor.experience,
       consultationFee: overrides.consultationFee ?? doctor.consultationFee,
       timing: overrides.timing ?? doctor.timing,
-      available: overrides.available ?? doctor.available,    // ✅ NEW
+      available: overrides.available ?? doctor.available,
       availability: {
         days: overrides.availabilityDays ?? doctor.availability.days,
         hours: overrides.availabilityHours ?? doctor.availability.hours,
@@ -122,7 +345,6 @@ useEffect(() => {
     };
   }, [doctor, overrides]);
 
-  // ✅ NEW: Computed availability status
   const isAvailable = mergedDoctor?.available ?? true;
 
   const handleFieldChange = <K extends keyof DoctorOverrides>(
@@ -132,17 +354,13 @@ useEffect(() => {
     setOverrides((prev) => ({ ...prev, [key]: value }));
   };
 
-  // ✅ NEW: Toggle availability with instant save
   const handleAvailabilityToggle = async () => {
     if (!doctor || !doctorId) return;
     const newValue = !isAvailable;
     const updatedOverrides = { ...overrides, available: newValue };
     setOverrides(updatedOverrides);
-
-    // Instant save so it reflects immediately on patient app
     const store = loadOverrides();
-    const next: OverridesStore = { ...store, [doctorId]: updatedOverrides };
-    saveOverrides(next);
+    saveOverrides({ ...store, [doctorId]: updatedOverrides });
   };
 
   const handleSave = async () => {
@@ -150,8 +368,7 @@ useEffect(() => {
     setSaving(true);
     await new Promise((resolve) => setTimeout(resolve, 600));
     const store = loadOverrides();
-    const next: OverridesStore = { ...store, [doctorId]: overrides };
-    saveOverrides(next);
+    saveOverrides({ ...store, [doctorId]: overrides });
     setSaving(false);
     alert("Profile and appointment settings saved for this doctor.");
   };
@@ -188,9 +405,7 @@ useEffect(() => {
     while (current < end && count < 8) {
       const h = Math.floor(current / 60);
       const m = current % 60;
-      result.push(
-        `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`
-      );
+      result.push(`${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}`);
       current += slotDuration;
       count += 1;
     }
@@ -205,9 +420,7 @@ useEffect(() => {
       <aside className="dd-sidebar">
         <div className="dd-sidebar__head">
           <div className="dd-sidebar__brand">
-            <div className="dd-sidebar__logo">
-              <span>Sh</span>
-            </div>
+            <div className="dd-sidebar__logo"><span>Sh</span></div>
             <div className="dd-sidebar__title">
               <span className="dd-sidebar__title-main">Shedula Health</span>
               <span className="dd-sidebar__title-sub">Doctor Console</span>
@@ -261,14 +474,7 @@ useEffect(() => {
             <h1 className="dd-topbar__title">Professional Information</h1>
           </div>
           <div className="dd-topbar__right">
-            {/* ✅ NEW: Availability Toggle in top bar */}
-            <div
-              className={`dd-availability-toggle ${
-                isAvailable
-                  ? "dd-availability-toggle--online"
-                  : "dd-availability-toggle--offline"
-              }`}
-            >
+            <div className={`dd-availability-toggle ${isAvailable ? "dd-availability-toggle--online" : "dd-availability-toggle--offline"}`}>
               <div className="dd-availability-toggle__info">
                 <span className="dd-availability-toggle__dot" />
                 <span className="dd-availability-toggle__label">
@@ -291,7 +497,6 @@ useEffect(() => {
         </header>
 
         <div className="dd-main-scroll">
-          {/* ✅ NEW: Unavailability Banner */}
           {!isAvailable && (
             <div className="dd-unavailable-banner">
               <div className="dd-unavailable-banner__content">
@@ -302,23 +507,19 @@ useEffect(() => {
                 <div>
                   <strong>You are currently set as unavailable</strong>
                   <p>
-                    Patients cannot book new appointments with you. Your profile
-                    will show as &quot;Unavailable&quot; on the patient app. Existing
-                    appointments are not affected.
+                    Patients cannot book new appointments with you. Your profile will show as
+                    &quot;Unavailable&quot; on the patient app. Existing appointments are not affected.
                   </p>
                 </div>
               </div>
-              <button
-                className="dd-unavailable-banner__btn"
-                onClick={handleAvailabilityToggle}
-              >
+              <button className="dd-unavailable-banner__btn" onClick={handleAvailabilityToggle}>
                 Go Available
               </button>
             </div>
           )}
 
           <div className="dd-grid">
-            {/* Left column — Professional Information */}
+            {/* Left — Professional Information */}
             <section className="dd-card">
               <div className="dd-card__header">
                 <div>
@@ -340,77 +541,39 @@ useEffect(() => {
                   <div>
                     <div className="dd-profile__avatar">
                       {overrides.image || mergedDoctor.image ? (
-                        <img
-                          src={overrides.image || mergedDoctor.image}
-                          alt={mergedDoctor.name}
-                        />
+                        <img src={overrides.image || mergedDoctor.image} alt={mergedDoctor.name} />
                       ) : (
                         mergedDoctor.name.split(" ").map((n) => n[0]).join("")
                       )}
-                      {/* ✅ NEW: Availability dot on avatar */}
-                      <span
-                        className={`dd-profile__status-dot ${
-                          isAvailable
-                            ? "dd-profile__status-dot--online"
-                            : "dd-profile__status-dot--offline"
-                        }`}
-                      />
+                      <span className={`dd-profile__status-dot ${isAvailable ? "dd-profile__status-dot--online" : "dd-profile__status-dot--offline"}`} />
                     </div>
-                    <p className="dd-profile__avatar-badge">
-                      Paste an image URL to change the profile picture.
-                    </p>
+                    <p className="dd-profile__avatar-badge">Paste an image URL to change the profile picture.</p>
                   </div>
 
                   <div className="dd-form-grid">
                     <div className="dd-form-row">
                       <label className="dd-label"><span>Name</span></label>
-                      <input
-                        className="dd-input"
-                        value={overrides.name ?? mergedDoctor.name}
-                        onChange={(e) => handleFieldChange("name", e.target.value)}
-                      />
+                      <input className="dd-input" value={overrides.name ?? mergedDoctor.name} onChange={(e) => handleFieldChange("name", e.target.value)} />
                     </div>
                     <div className="dd-form-row">
                       <label className="dd-label"><span>Specialty</span></label>
-                      <input
-                        className="dd-input"
-                        value={overrides.specialty ?? mergedDoctor.specialty}
-                        onChange={(e) => handleFieldChange("specialty", e.target.value)}
-                      />
+                      <input className="dd-input" value={overrides.specialty ?? mergedDoctor.specialty} onChange={(e) => handleFieldChange("specialty", e.target.value)} />
                     </div>
                     <div className="dd-form-row">
                       <label className="dd-label"><span>Qualification</span></label>
-                      <input
-                        className="dd-input"
-                        value={overrides.qualification ?? mergedDoctor.qualification}
-                        onChange={(e) => handleFieldChange("qualification", e.target.value)}
-                      />
+                      <input className="dd-input" value={overrides.qualification ?? mergedDoctor.qualification} onChange={(e) => handleFieldChange("qualification", e.target.value)} />
                     </div>
                     <div className="dd-form-row">
                       <label className="dd-label"><span>Experience (years)</span></label>
-                      <input
-                        className="dd-input"
-                        value={overrides.experience ?? mergedDoctor.experience}
-                        onChange={(e) => handleFieldChange("experience", e.target.value)}
-                      />
+                      <input className="dd-input" value={overrides.experience ?? mergedDoctor.experience} onChange={(e) => handleFieldChange("experience", e.target.value)} />
                     </div>
                     <div className="dd-form-row">
                       <label className="dd-label"><span>Location / Clinic</span></label>
-                      <input
-                        className="dd-input"
-                        placeholder="City, State"
-                        value={overrides.location ?? mergedDoctor.location ?? ""}
-                        onChange={(e) => handleFieldChange("location", e.target.value)}
-                      />
+                      <input className="dd-input" placeholder="City, State" value={overrides.location ?? mergedDoctor.location ?? ""} onChange={(e) => handleFieldChange("location", e.target.value)} />
                     </div>
                     <div className="dd-form-row">
                       <label className="dd-label"><span>Profile Image URL</span></label>
-                      <input
-                        className="dd-input"
-                        placeholder="https://example.com/image.jpg"
-                        value={overrides.image ?? ""}
-                        onChange={(e) => handleFieldChange("image", e.target.value)}
-                      />
+                      <input className="dd-input" placeholder="https://example.com/image.jpg" value={overrides.image ?? ""} onChange={(e) => handleFieldChange("image", e.target.value)} />
                     </div>
                   </div>
                 </div>
@@ -420,23 +583,17 @@ useEffect(() => {
                     <span>About</span>
                     <span>Shown on the doctor details page</span>
                   </label>
-                  <textarea
-                    className="dd-textarea"
-                    value={overrides.about ?? (doctor as any).about ?? ""}
-                    onChange={(e) => handleFieldChange("about", e.target.value)}
-                  />
+                  <textarea className="dd-textarea" value={overrides.about ?? (doctor as any).about ?? ""} onChange={(e) => handleFieldChange("about", e.target.value)} />
                 </div>
 
                 <div className="dd-chip-row">
-                  <span className="dd-chip">
-                    Patients see these updates immediately in the patient app.
-                  </span>
+                  <span className="dd-chip">Patients see these updates immediately in the patient app.</span>
                   <span className="dd-chip">Tip: keep it short and clear.</span>
                 </div>
               </div>
             </section>
 
-            {/* Right column: rating + contact */}
+            {/* Right — Reviews & Contact */}
             <section className="dd-card">
               <div className="dd-card__header">
                 <div>
@@ -446,9 +603,7 @@ useEffect(() => {
                     </svg>
                     <span>Reviews & Ratings</span>
                   </div>
-                  <p className="dd-card__subtitle">
-                    This is based on patient feedback from the mock data.
-                  </p>
+                  <p className="dd-card__subtitle">This is based on patient feedback from the mock data.</p>
                 </div>
               </div>
               <div className="dd-card__body">
@@ -457,13 +612,7 @@ useEffect(() => {
                   <div>
                     <div className="dd-rating__stars">
                       {Array.from({ length: 5 }).map((_, i) => (
-                        <svg
-                          key={i}
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill={i + 1 <= Math.round(mergedDoctor.rating) ? "#FBBF24" : "none"}
-                        >
+                        <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill={i + 1 <= Math.round(mergedDoctor.rating) ? "#FBBF24" : "none"}>
                           <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.77 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z" stroke="#FBBF24" strokeWidth="1.5" strokeLinejoin="round" />
                         </svg>
                       ))}
@@ -477,21 +626,11 @@ useEffect(() => {
 
                 <div className="dd-form-row">
                   <label className="dd-label"><span>Contact Email</span></label>
-                  <input
-                    className="dd-input"
-                    placeholder="clinic@example.com"
-                    value={overrides.contactEmail ?? (overrides.location ? "" : (mockData.testUser.email || ""))}
-                    onChange={(e) => handleFieldChange("contactEmail", e.target.value)}
-                  />
+                  <input className="dd-input" placeholder="clinic@example.com" value={overrides.contactEmail ?? (mockData.testUser.email || "")} onChange={(e) => handleFieldChange("contactEmail", e.target.value)} />
                 </div>
                 <div className="dd-form-row">
                   <label className="dd-label"><span>Phone Number</span></label>
-                  <input
-                    className="dd-input"
-                    placeholder="+91XXXXXXXXXX"
-                    value={overrides.contactPhone ?? (overrides.location ? "" : (mockData.testUser.mobile || ""))}
-                    onChange={(e) => handleFieldChange("contactPhone", e.target.value)}
-                  />
+                  <input className="dd-input" placeholder="+91XXXXXXXXXX" value={overrides.contactPhone ?? (mockData.testUser.mobile || "")} onChange={(e) => handleFieldChange("contactPhone", e.target.value)} />
                 </div>
 
                 <div className="dd-contact-pill">
@@ -504,7 +643,7 @@ useEffect(() => {
             </section>
           </div>
 
-          {/* Appointment slots row */}
+          {/* Appointment Slots */}
           <div className="dd-grid" style={{ marginTop: 14 }}>
             <section className="dd-card">
               <div className="dd-card__header">
@@ -582,19 +721,46 @@ useEffect(() => {
                     </div>
                   </div>
 
+                  {/* ── RIGHT COLUMN: Availability displayed to patient ── */}
                   <div>
+                    {/* Day Picker */}
                     <div className="dd-form-row">
                       <label className="dd-label">
-                        <span>Availability</span>
-                        <span>Displayed on patient app</span>
+                        <span>Availability Days</span>
+                        <span>Select days displayed to patients</span>
                       </label>
-                      <input className="dd-input" value={overrides.availabilityDays ?? mergedDoctor.availability.days} onChange={(e) => handleFieldChange("availabilityDays", e.target.value)} />
-                    </div>
-                    <div className="dd-form-row">
-                      <label className="dd-label"><span>Hours</span></label>
-                      <input className="dd-input" value={overrides.availabilityHours ?? mergedDoctor.availability.hours} onChange={(e) => handleFieldChange("availabilityHours", e.target.value)} />
+                      <DayPicker
+                        value={overrides.availabilityDays ?? mergedDoctor.availability.days}
+                        onChange={(v) => handleFieldChange("availabilityDays", v)}
+                      />
+                      {/* Read-only formatted output */}
+                      <div className="trp-summary" style={{ marginTop: 6 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                          <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="1.6" />
+                          <path d="M16 2v4M8 2v4M3 10h18" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                        </svg>
+                        <span>
+                          Patients will see:{" "}
+                          <strong>
+                            {(overrides.availabilityDays ?? mergedDoctor.availability.days) || "No days selected"}
+                          </strong>
+                        </span>
+                      </div>
                     </div>
 
+                    {/* Time Range Picker */}
+                    <div className="dd-form-row" style={{ marginTop: 16 }}>
+                      <label className="dd-label">
+                        <span>Availability Hours</span>
+                        <span>Set hours displayed to patients</span>
+                      </label>
+                      <TimeRangePicker
+                        value={overrides.availabilityHours ?? mergedDoctor.availability.hours}
+                        onChange={(v) => handleFieldChange("availabilityHours", v)}
+                      />
+                    </div>
+
+                    {/* Slot preview (unchanged) */}
                     <div className="dd-slot-preview">
                       <div>Preview for <strong>{recurringDay}</strong></div>
                       <div className="dd-slot-preview__chips">
@@ -639,6 +805,7 @@ useEffect(() => {
               </div>
             </section>
 
+            {/* Fee & Summary */}
             <section className="dd-card">
               <div className="dd-card__header">
                 <div>
@@ -679,13 +846,10 @@ useEffect(() => {
                   <span className="dd-pill">
                     Patients booked so far: {(doctor as any).patients}
                   </span>
-                  {/* ✅ NEW: Show current availability status */}
                   <span className={`dd-pill ${isAvailable ? "dd-pill--green" : "dd-pill--red"}`}>
                     Status: {isAvailable ? "Available" : "Unavailable"}
                   </span>
-                  <span className="dd-badge-small">
-                    Demo only — stored in localStorage
-                  </span>
+                  <span className="dd-badge-small">Demo only — stored in localStorage</span>
                 </div>
               </div>
             </section>
