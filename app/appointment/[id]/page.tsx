@@ -191,25 +191,44 @@ export default function AppointmentPage() {
   }, [params.id, router]);
 
   // Rebuild available dates whenever doctor (or its availability) changes
-  useEffect(() => {
-    if (!doctor) return;
+// ─── Rebuild available dates ───────────────────────────────────────────────
+useEffect(() => {
+  if (!doctor) return;
 
-    const workingDays = getWorkingDays(doctor.availability.days);
-    const dates: string[] = [];
-    const today = new Date();
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-    for (let i = 1; i <= 14 && dates.length < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      if (workingDays.includes(date.getDay())) {
-        dates.push(date.toISOString().split("T")[0]);
-      }
-    }
+  // ── Priority 1: doctor set explicit dates via the calendar picker ──────
+  if (slotConfig?.selectedDates && slotConfig.selectedDates.length > 0) {
+    const futureDates = slotConfig.selectedDates
+      .filter((iso) => {
+        const d = new Date(iso + "T00:00:00");
+        return d >= today; // only show today or future
+      })
+      .sort(); // already sorted but ensure it
 
-    setAvailableDates(dates);
-    setSelectedDate(dates[0] ?? "");
+    setAvailableDates(futureDates);
+    setSelectedDate(futureDates[0] ?? "");
     setSelectedTime("");
-  }, [doctor]);
+    return;
+  }
+
+  // ── Priority 2: fall back to working-days logic ────────────────────────
+  const workingDays = getWorkingDays(doctor.availability.days);
+  const dates: string[] = [];
+
+  for (let i = 1; i <= 30 && dates.length < 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    if (workingDays.includes(date.getDay())) {
+      dates.push(date.toISOString().split("T")[0]);
+    }
+  }
+
+  setAvailableDates(dates);
+  setSelectedDate(dates[0] ?? "");
+  setSelectedTime("");
+}, [doctor, slotConfig]); // 👈 slotConfig must be in deps
 
   // Load booked slots
   useEffect(() => {

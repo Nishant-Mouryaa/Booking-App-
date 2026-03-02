@@ -6,6 +6,7 @@ export interface DoctorSlotConfig {
   slotDurationMinutes?: number;
   maxPatientsPerSlot?: number;
   appointmentType?: "individual" | "group";
+   selectedDates?: string[];
 }
 
 function format24to12(time24: string): string {
@@ -88,6 +89,7 @@ export function getDoctorWithOverrides(doctorId: number): {
           slotDurationMinutes,
           maxPatientsPerSlot: maxPatientsPerSlot ?? 1,
           appointmentType: appointmentType ?? "individual",
+           selectedDates       : overrides.selectedDates,
         }
       : null;
 
