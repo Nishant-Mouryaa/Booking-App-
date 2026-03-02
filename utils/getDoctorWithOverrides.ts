@@ -47,6 +47,7 @@ export function getDoctorWithOverrides(doctorId: number): {
       maxPatientsPerSlot,
       appointmentType,
       available,              // ✅ NEW: extract available toggle
+      selectedDates,
       ...rest
     } = ov;
 
@@ -89,7 +90,7 @@ export function getDoctorWithOverrides(doctorId: number): {
           slotDurationMinutes,
           maxPatientsPerSlot: maxPatientsPerSlot ?? 1,
           appointmentType: appointmentType ?? "individual",
-           selectedDates       : overrides.selectedDates,
+          selectedDates,
         }
       : null;
 
