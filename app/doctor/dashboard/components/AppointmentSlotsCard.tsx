@@ -1,67 +1,13 @@
 "use client";
 
 import { CalendarDayPicker } from "./CalendarDayPicker";
-import { TimeRangePicker } from "./TimeRangePicker";
+import { TimeRangePicker }   from "./TimeRangePicker";
 import { generatePreviewSlots } from "../utils/timeUtils";
 import type { Doctor, DoctorOverrides } from "../types/doctor.types";
-import { useState, useEffect } from "react";
 
 const WEEK_DAY_NAMES = [
-  "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday",
+  "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday",
 ];
-
-// Custom Toast Component
-function Toast({ message, type = "success", onClose }: { 
-  message: string; 
-  type?: "success" | "error" | "info" | "warning";
-  onClose: () => void;
-}) {
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      onClose();
-    }, 4000); // Slightly longer for better readability
-
-    return () => clearTimeout(timer);
-  }, [onClose]);
-
-  const icons = {
-    success: (
-      <svg className="dd-toast-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M6 10L9 13L14 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    ),
-    error: (
-      <svg className="dd-toast-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M7 13L13 7M7 7L13 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    ),
-    info: (
-      <svg className="dd-toast-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/>
-        <path d="M10 7V10M10 13H10.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    ),
-    warning: (
-      <svg className="dd-toast-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <path d="M10 4L2 16H18L10 4Z" stroke="currentColor" strokeWidth="1.5" fill="none"/>
-        <circle cx="10" cy="13" r="1" fill="currentColor"/>
-        <path d="M10 8V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-      </svg>
-    ),
-  };
-
-  return (
-    <div className={`dd-toast dd-toast--${type}`}>
-      <div className="dd-toast__content">
-        {icons[type]}
-        <span className="dd-toast__message">{message}</span>
-      </div>
-      <button className="dd-toast__close" onClick={onClose}>×</button>
-    </div>
-  );
-}
 
 interface AppointmentSlotsCardProps {
   mergedDoctor: Doctor & { availability: { days: string; hours: string } };
@@ -83,99 +29,16 @@ export function AppointmentSlotsCard({
   onSave,
   onReset,
 }: AppointmentSlotsCardProps) {
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" | "warning" } | null>(null);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
-
   const slotDuration = overrides.slotDurationMinutes ?? 30;
-  const startTime = overrides.defaultStartTime ?? "09:00";
-  const endTime = overrides.defaultEndTime ?? "17:00";
-  const recurringDay = overrides.recurringDay ?? "Friday";
+  const startTime    = overrides.defaultStartTime    ?? "09:00";
+  const endTime      = overrides.defaultEndTime      ?? "17:00";
+  const recurringDay = overrides.recurringDay         ?? "Friday";
   const selectedDates: string[] = overrides.selectedDates ?? [];
 
   const previewSlots = generatePreviewSlots(startTime, endTime, slotDuration);
 
-  const validateSettings = (): boolean => {
-    const errors: string[] = [];
-    
-    if (startTime >= endTime) {
-      errors.push("End time must be after start time");
-    }
-    
-    if (slotDuration < 10 || slotDuration > 120) {
-      errors.push("Slot duration must be between 10 and 120 minutes");
-    }
-    
-    if (selectedDates.length === 0) {
-      errors.push("Please select at least one availability date");
-    }
-    
-    setValidationErrors(errors);
-    return errors.length === 0;
-  };
-
-  const handleSave = async () => {
-    if (!validateSettings()) {
-      setToast({
-        message: "Please fix the validation errors before saving",
-        type: "warning"
-      });
-      return;
-    }
-
-    try {
-      await onSave();
-      setToast({
-        message: "Appointment settings have been updated successfully",
-        type: "success"
-      });
-    } catch (error) {
-      setToast({
-        message: "Unable to save changes. Please try again.",
-        type: "error"
-      });
-    }
-  };
-
-  const handleReset = () => {
-    onReset();
-    setValidationErrors([]);
-    setToast({
-      message: "All settings have been restored to their default values",
-      type: "info"
-    });
-  };
-
   return (
     <section className="dd-card">
-      {/* Toast Container */}
-      {toast && (
-        <div className="dd-toast-container">
-          <Toast
-            message={toast.message}
-            type={toast.type}
-            onClose={() => setToast(null)}
-          />
-        </div>
-      )}
-
-      {/* Validation Errors */}
-      {validationErrors.length > 0 && (
-        <div className="dd-validation-errors">
-          <div className="dd-validation-errors__title">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="6" stroke="#ef4444" strokeWidth="1.5"/>
-              <path d="M8 4V8M8 11H8.01" stroke="#ef4444" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-            Please fix the following:
-          </div>
-          <ul className="dd-validation-errors__list">
-            {validationErrors.map((error, index) => (
-              <li key={index}>{error}</li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {/* ── Card header ── */}
       <div className="dd-card__header">
         <div>
@@ -189,7 +52,7 @@ export function AppointmentSlotsCard({
             <span>Appointment Slots</span>
           </div>
           <p className="dd-card__subtitle">
-            Configure appointment settings and availability for patients
+            Configure default timings used when patients book a visit.
           </p>
         </div>
       </div>
@@ -203,10 +66,10 @@ export function AppointmentSlotsCard({
               <div className="dd-quick-guide__title">Quick Setup Guide</div>
               <div className="dd-quick-guide__grid">
                 {[
-                  ["Date Selection", "Pick dates directly on the calendar"],
-                  ["Time Setup", "Start time, end time & slot length"],
+                  ["Date Selection",   "Pick dates directly on the calendar"],
+                  ["Time Setup",       "Start time, end time & slot length"],
                   ["Appointment Type", "Individual or group slots"],
-                  ["Capacity", "Max patients per slot"],
+                  ["Capacity",         "Max patients per slot"],
                 ].map(([title, desc]) => (
                   <div key={title} className="dd-quick-guide__item">
                     <span>{title}</span>
@@ -300,7 +163,7 @@ export function AppointmentSlotsCard({
           {/* ── RIGHT: Patient-visible availability ── */}
           <div>
 
-            {/* Calendar Day Picker */}
+            {/* Calendar Day Picker — replaces old DayPicker tabs */}
             <div className="dd-form-row">
               <label className="dd-label">
                 <span>Availability Dates</span>
@@ -358,6 +221,11 @@ export function AppointmentSlotsCard({
                 )}
               </div>
             </div>
+
+            <div className="dd-help">
+              These settings drive the slot grid on the patient booking page.
+              In this demo they are stored in your browser only.
+            </div>
           </div>
         </div>
       </div>
@@ -367,19 +235,19 @@ export function AppointmentSlotsCard({
         <button
           type="button"
           className="dd-btn dd-btn--ghost"
-          onClick={handleReset}
+          onClick={onReset}
         >
           Reset Changes
         </button>
         <button
           type="button"
           className="dd-btn dd-btn--primary"
-          onClick={handleSave}
+          onClick={onSave}
           disabled={saving}
         >
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? "Saving..." : "Save & Update Patient View"}
         </button>
       </div>
     </section>
   );
-}
+} 

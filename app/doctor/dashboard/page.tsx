@@ -16,6 +16,7 @@ export default function DoctorDashboardPage() {
     mergedDoctor,
     overrides,
     saving,
+    saveSuccess, 
     isAvailable,
     handleFieldChange,
     handleAvailabilityToggle,
@@ -54,6 +55,26 @@ export default function DoctorDashboardPage() {
           {!isAvailable && (
             <UnavailableBanner onGoAvailable={handleAvailabilityToggle} />
           )}
+
+           {/* ── Save success toast ── */}
+  {saveSuccess && (
+    <div className="dd-toast dd-toast--success">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M20 6L9 17l-5-5"
+          stroke="currentColor"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      Profile and appointment settings saved successfully.
+    </div>
+  )}
+
+  {!isAvailable && (
+    <UnavailableBanner onGoAvailable={handleAvailabilityToggle} />
+  )}
 
           {/* Row 1 */}
           <div className="dd-grid">

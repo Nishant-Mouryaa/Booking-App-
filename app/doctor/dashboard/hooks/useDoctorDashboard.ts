@@ -10,6 +10,8 @@ export function useDoctorDashboard() {
   const [overrides, setOverrides] = useState<DoctorOverrides>({});
   const [saving, setSaving] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  // ── add this new state ──
+const [saveSuccess, setSaveSuccess] = useState(false);
 
   const doctorId = useMemo(() => {
     if (typeof window === "undefined") return null;
@@ -69,16 +71,17 @@ export function useDoctorDashboard() {
     saveOverrides({ ...store, [doctorId]: updatedOverrides });
   };
 
-  const handleSave = async () => {
-    if (!doctor || !doctorId) return;
-    setSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    const store = loadOverrides();
-    saveOverrides({ ...store, [doctorId]: overrides });
-    setSaving(false);
-    alert("Profile and appointment settings saved for this doctor.");
-  };
-
+// ── replace handleSave ──
+const handleSave = async () => {
+  if (!doctor || !doctorId) return;
+  setSaving(true);
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  const store = loadOverrides();
+  saveOverrides({ ...store, [doctorId]: overrides });
+  setSaving(false);
+  setSaveSuccess(true);                          // ✅ show toast
+  setTimeout(() => setSaveSuccess(false), 3500); // ✅ auto-dismiss
+};
   const handleReset = () => {
     if (!doctorId) return;
     const store = loadOverrides();
@@ -96,7 +99,9 @@ export function useDoctorDashboard() {
     overrides,
     saving,
     isAvailable,
+    saveSuccess,
     handleFieldChange,
+    
     handleAvailabilityToggle,
     handleSave,
     handleReset,
