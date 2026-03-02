@@ -1055,7 +1055,7 @@
 
 /* Wrapper keeps the popover positioned relative */
 .cdp {
-  position: relative;
+  position: static;  /* override the previous `position: relative` */
   width: 100%;
 }
 
@@ -1109,27 +1109,19 @@
 
 /* ── Popover card ─────────────────────────────────────── */
 .cdp-popover {
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
-  z-index: 120;
-  width: 320px;
   background: var(--surface, #ffffff);
   border: 1.5px solid var(--border, #e5e7eb);
   border-radius: 14px;
   box-shadow:
-    0 4px 6px -1px rgba(0,0,0,.07),
-    0 12px 32px -4px rgba(0,0,0,.13);
-  padding: 0;
+    0 4px 6px -1px rgba(0, 0, 0, 0.07),
+    0 12px 32px -4px rgba(0, 0, 0, 0.18);
   overflow: hidden;
-  animation: cdpFadeIn .16s ease;
+  animation: cdpFadeIn 0.16s ease;
 }
-
 @keyframes cdpFadeIn {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
-
 /* ── Popover header ───────────────────────────────────── */
 .cdp-pop__header {
   display: flex;
@@ -1219,7 +1211,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 36px;
+  height: 32px;
   border-radius: 8px;
   border: none;
   background: transparent;
@@ -1232,7 +1224,7 @@
 .cdp-cell:not(.cdp-cell--day) { cursor: default; }
 
 .cdp-cell__num {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--text-primary, #111827);
   line-height: 1;
