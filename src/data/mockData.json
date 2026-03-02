@@ -5,9 +5,169 @@
     "otp": "1234",
     "name": "Nishant",
     "location": "Virar, Mumbai",
-    "avatar": "/avatar.jpg"
+    "avatar": "/avatar.jpg",
+    "bloodGroup": "O+",
+    "dob": "1995-06-14",
+    "gender": "Male",
+    "address": "42, Lake Town, Kolkata, West Bengal – 700089",
+    "emergencyContact": {
+      "name": "Rina Das",
+      "relation": "Mother",
+      "phone": "+91 91234 56789"
+    },
+    "allergies": ["Penicillin", "Dust"],
+    "chronicConditions": ["Mild Hypertension"],
+    "prescriptions": [
+      {
+        "id": 1,
+        "doctor": "Dr. Prakash Das",
+        "specialty": "Cardiology",
+        "date": "2025-08-03",
+        "prescribedDate": "2025-08-07",
+        "medications": [
+          { "name": "Atorvastatin", "dosage": "10mg", "frequency": "Once daily", "duration": "30 days" },
+          { "name": "Amlodipine",   "dosage": "5mg",  "frequency": "Once daily", "duration": "30 days" }
+        ],
+        "notes": "Avoid fatty foods. Follow up in 4 weeks."
+      },
+      {
+        "id": 2,
+        "doctor": "Dr. Sarah Johnson",
+        "specialty": "General Medicine",
+        "date": "2025-07-10",
+        "prescribedDate": "2025-07-10",
+        "medications": [
+          { "name": "Paracetamol", "dosage": "500mg", "frequency": "Twice daily", "duration": "5 days" },
+          { "name": "Cetirizine",  "dosage": "10mg",  "frequency": "Once at night","duration": "7 days" }
+        ],
+        "notes": "Rest and stay hydrated."
+      }
+    ],
+"testReports": [
+  {
+    "id": 1,
+    "name": "Complete Blood Count (CBC)",
+    "date": "2025-07-28",
+    "lab": "Metropolis Lab",
+    "status": "Normal",
+    "findings": [
+      { "test": "Haemoglobin",        "result": "14.2",  "unit": "g/dL",    "range": "13.0–17.0", "flag": "" },
+      { "test": "WBC Count",          "result": "7,200", "unit": "cells/μL","range": "4,500–11,000","flag": "" },
+      { "test": "RBC Count",          "result": "5.1",   "unit": "mill/μL", "range": "4.5–5.9",   "flag": "" },
+      { "test": "Platelets",          "result": "2,40,000","unit": "/μL",   "range": "1,50,000–4,00,000","flag": "" },
+      { "test": "Haematocrit (PCV)",  "result": "42.3",  "unit": "%",       "range": "40–52",     "flag": "" },
+      { "test": "MCV",                "result": "88",    "unit": "fL",      "range": "80–100",    "flag": "" },
+      { "test": "MCH",                "result": "29.5",  "unit": "pg",      "range": "27–32",     "flag": "" },
+      { "test": "Neutrophils",        "result": "62",    "unit": "%",       "range": "40–75",     "flag": "" },
+      { "test": "Lymphocytes",        "result": "28",    "unit": "%",       "range": "20–45",     "flag": "" },
+      { "test": "Eosinophils",        "result": "3",     "unit": "%",       "range": "1–6",       "flag": "" }
+    ],
+    "doctorNote": "All parameters within normal limits. No further action required."
   },
-    "doctorAuth": {
+  {
+    "id": 2,
+    "name": "Lipid Profile",
+    "date": "2025-07-15",
+    "lab": "SRL Diagnostics",
+    "status": "Review",
+    "findings": [
+      { "test": "Total Cholesterol",   "result": "218",  "unit": "mg/dL", "range": "<200",  "flag": "H" },
+      { "test": "LDL Cholesterol",     "result": "138",  "unit": "mg/dL", "range": "<100",  "flag": "H" },
+      { "test": "HDL Cholesterol",     "result": "48",   "unit": "mg/dL", "range": ">40",   "flag": "" },
+      { "test": "Triglycerides",       "result": "168",  "unit": "mg/dL", "range": "<150",  "flag": "H" },
+      { "test": "VLDL Cholesterol",    "result": "34",   "unit": "mg/dL", "range": "<30",   "flag": "H" },
+      { "test": "Non-HDL Cholesterol", "result": "170",  "unit": "mg/dL", "range": "<130",  "flag": "H" },
+      { "test": "LDL/HDL Ratio",       "result": "2.87", "unit": "",      "range": "<3.5",  "flag": "" }
+    ],
+    "doctorNote": "LDL and Total Cholesterol elevated. Recommend dietary changes and follow-up in 6 weeks. Consider statin therapy if no improvement."
+  },
+  {
+    "id": 3,
+    "name": "HbA1c (Glycated Haemoglobin)",
+    "date": "2025-06-20",
+    "lab": "Dr. Lal PathLabs",
+    "status": "Normal",
+    "findings": [
+      { "test": "HbA1c",          "result": "5.6", "unit": "%",      "range": "<5.7",    "flag": "" },
+      { "test": "Estimated Avg Glucose","result": "114","unit": "mg/dL","range": "<126", "flag": "" },
+      { "test": "Fasting Glucose","result": "92",  "unit": "mg/dL",  "range": "70–100",  "flag": "" },
+      { "test": "Post-Prandial",  "result": "128", "unit": "mg/dL",  "range": "<140",    "flag": "" }
+    ],
+    "doctorNote": "Glucose metabolism normal. Maintain current diet and exercise routine."
+  }
+],
+"documents": [
+  {
+    "id": 1,
+    "name": "Discharge Summary – AMRI Hospital",
+    "date": "2025-05-12",
+    "type": "Discharge",
+    "pages": 2,
+    "content": {
+      "hospital": "AMRI Hospitals, Kolkata",
+      "admissionDate": "2025-05-09",
+      "dischargeDate": "2025-05-12",
+      "diagnosis": "Acute Viral Fever with Mild Dehydration",
+      "treatment": "IV fluids, Antipyretics, Rest. Patient responded well to treatment.",
+      "followUp": "Review after 2 weeks with Dr. Prakash Das.",
+      "medications": [
+        { "name": "Tab. Paracetamol 500mg", "instruction": "TDS × 5 days" },
+        { "name": "Tab. Pantoprazole 40mg", "instruction": "OD before breakfast × 7 days" },
+        { "name": "ORS Sachets",             "instruction": "As needed for hydration" }
+      ]
+    }
+  },
+  {
+    "id": 2,
+    "name": "Insurance Card – Star Health",
+    "date": "2025-01-01",
+    "type": "Insurance",
+    "pages": 1,
+    "content": {
+      "provider": "Star Health & Allied Insurance Co. Ltd.",
+      "policyNo": "P/211121/01/2025/000742",
+      "insuredName": "Dhrubajyoti Das",
+      "sumInsured": "₹5,00,000",
+      "validFrom": "01 Jan 2025",
+      "validTo": "31 Dec 2025",
+      "tpaName": "Medi Assist India TPA",
+      "emergencyNo": "1800-425-2255",
+      "networkHospitals": "5,000+ across India"
+    }
+  },
+  {
+    "id": 3,
+    "name": "Vaccination Certificate – COVID-19",
+    "date": "2022-08-18",
+    "type": "Vaccination",
+    "pages": 1,
+    "content": {
+      "vaccine": "Covishield (AstraZeneca)",
+      "beneficiaryName": "Dhrubajyoti Das",
+      "dob": "14 Jun 1995",
+      "dose1Date": "2021-07-10",
+      "dose1Batch": "4121Z084",
+      "dose1Site": "AMRI Hospital, Kolkata",
+      "dose2Date": "2021-10-12",
+      "dose2Batch": "4121Z210",
+      "dose2Site": "AMRI Hospital, Kolkata",
+      "boosterDate": "2022-08-18",
+      "boosterBatch": "BOOSTERA221",
+      "boosterSite": "Metropolis Health Centre",
+      "certificateNo": "COV-WB-2022-8741923"
+    }
+  }
+],
+    "vitalSigns": [
+      { "label": "Blood Pressure", "value": "122/80",  "unit": "mmHg",  "status": "normal",  "icon": "bp",   "recordedAt": "2025-08-03" },
+      { "label": "Heart Rate",     "value": "74",       "unit": "bpm",   "status": "normal",  "icon": "heart","recordedAt": "2025-08-03" },
+      { "label": "Blood Sugar",    "value": "105",      "unit": "mg/dL", "status": "normal",  "icon": "sugar","recordedAt": "2025-08-01" },
+      { "label": "SpO₂",           "value": "98",       "unit": "%",     "status": "normal",  "icon": "spo2", "recordedAt": "2025-08-03" },
+      { "label": "Temperature",    "value": "98.4",     "unit": "°F",    "status": "normal",  "icon": "temp", "recordedAt": "2025-08-03" },
+      { "label": "Weight",         "value": "72",       "unit": "kg",    "status": "normal",  "icon": "weight","recordedAt": "2025-07-30" }
+  ]
+},
+"doctorAuth": {
     "otp": "5678",
     "otpLength": 4,
     "otpExpirySeconds": 60

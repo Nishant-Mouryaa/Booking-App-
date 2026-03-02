@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import mockData from "@/data/mockData.json";
 import "./home.css";
+import ProfilePage from "./components/ProfilePage";
+
 
 interface Doctor {
   id: number;
@@ -245,21 +247,20 @@ export default function HomePage() {
         alert("📋 Medical Records coming soon!");
       },
     },
-    {
-      id: "profile",
-      label: "Profile",
-      shortLabel: "Profile",
-      icon: (
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
-          <path d="M5 20C5 16.6863 7.68629 14 11 14H13C16.3137 14 19 16.6863 19 20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      ),
-      action: () => {
-        setActiveTab("profile");
-        if (confirm("Do you want to logout?")) handleLogout();
-      },
-    },
+ {
+  id: "profile",
+  label: "Profile",
+  shortLabel: "Profile",
+  icon: (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="2"/>
+      <path d="M5 20C5 16.6863 7.68629 14 11 14H13C16.3137 14 19 16.6863 19 20"
+        stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+    </svg>
+  ),
+  // ↓ CHANGED — just activate the tab, no logout confirm
+  action: () => setActiveTab("profile"),
+},
   ];
 
   const upcomingCount = mockData.appointments.filter(
@@ -432,6 +433,10 @@ export default function HomePage() {
 
         {/* ---- Scrollable Content ---- */}
         <div className="hp-scroll">
+  {activeTab === "profile" ? (
+    <ProfilePage />
+  ) : (
+    <>
           {/* Hero Banner */}
           <section className="hp-hero">
             <div className="hp-hero__content">
@@ -611,7 +616,10 @@ export default function HomePage() {
               </div>
             )}
           </section>
+           </>
+             )}
         </div>
+
       </main>
 
       {/* ========== MOBILE BOTTOM NAV ========== */}

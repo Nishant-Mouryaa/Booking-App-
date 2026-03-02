@@ -1047,3 +1047,520 @@
   flex-shrink: 0;
   color: #16a34a;
 }
+
+
+/* ══════════════════════════════════════════════════════════
+   CalendarDayPicker  (cdp-*)
+══════════════════════════════════════════════════════════ */
+
+/* Wrapper keeps the popover positioned relative */
+.cdp {
+  position: relative;
+  width: 100%;
+}
+
+/* ── Trigger button ───────────────────────────────────── */
+.cdp-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary, #111827);
+  transition: border-color .18s, box-shadow .18s;
+  text-align: left;
+}
+.cdp-trigger:hover {
+  border-color: var(--primary, #6366f1);
+}
+.cdp-trigger--open {
+  border-color: var(--primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99,102,241,.12);
+}
+.cdp-trigger__icon {
+  color: var(--primary, #6366f1);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.cdp-trigger__label {
+  flex: 1;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: inherit;
+}
+.cdp-trigger__caret {
+  flex-shrink: 0;
+  color: #9ca3af;
+  transition: transform .2s;
+  display: flex;
+  align-items: center;
+}
+.cdp-trigger__caret--up {
+  transform: rotate(180deg);
+}
+
+/* ── Popover card ─────────────────────────────────────── */
+.cdp-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 120;
+  width: 320px;
+  background: var(--surface, #ffffff);
+  border: 1.5px solid var(--border, #e5e7eb);
+  border-radius: 14px;
+  box-shadow:
+    0 4px 6px -1px rgba(0,0,0,.07),
+    0 12px 32px -4px rgba(0,0,0,.13);
+  padding: 0;
+  overflow: hidden;
+  animation: cdpFadeIn .16s ease;
+}
+
+@keyframes cdpFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Popover header ───────────────────────────────────── */
+.cdp-pop__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 16px 0;
+}
+.cdp-pop__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+  display: block;
+  margin-bottom: 2px;
+}
+.cdp-pop__subtitle {
+  font-size: 11px;
+  color: #9ca3af;
+  display: block;
+}
+.cdp-pop__clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11.5px;
+  color: #ef4444;
+  font-weight: 500;
+  padding: 2px 0;
+  flex-shrink: 0;
+  transition: color .15s;
+}
+.cdp-pop__clear:hover { color: #b91c1c; }
+
+/* ── Month navigation ─────────────────────────────────── */
+.cdp-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 6px;
+}
+.cdp-nav__btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary, #6b7280);
+  transition: background .15s, color .15s;
+}
+.cdp-nav__btn:hover {
+  background: var(--primary, #6366f1);
+  color: #fff;
+  border-color: var(--primary, #6366f1);
+}
+.cdp-nav__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary, #111827);
+}
+
+/* ── Day-of-week header row ───────────────────────────── */
+.cdp-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  padding: 0 10px;
+}
+.cdp-grid--head {
+  padding-bottom: 0;
+}
+.cdp-cell--head {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-align: center;
+  padding: 4px 0 2px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+}
+
+/* ── Date cells ───────────────────────────────────────── */
+.cdp-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: background .13s, color .13s;
+  padding: 0;
+  gap: 2px;
+}
+.cdp-cell:not(.cdp-cell--day) { cursor: default; }
+
+.cdp-cell__num {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-primary, #111827);
+  line-height: 1;
+}
+
+/* today ring */
+.cdp-cell--today .cdp-cell__num {
+  color: var(--primary, #6366f1);
+  font-weight: 700;
+}
+.cdp-cell--today::after {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border: 1.5px solid var(--primary, #6366f1);
+  border-radius: 7px;
+  pointer-events: none;
+  opacity: .45;
+}
+
+/* hover */
+.cdp-cell--hover {
+  background: rgba(99,102,241,.08);
+}
+.cdp-cell--hover .cdp-cell__num {
+  color: var(--primary, #6366f1);
+}
+
+/* selected */
+.cdp-cell--selected {
+  background: var(--primary, #6366f1) !important;
+}
+.cdp-cell--selected .cdp-cell__num {
+  color: #fff !important;
+  font-weight: 700;
+}
+.cdp-cell--selected::after { display: none; }
+
+/* selected dot indicator */
+.cdp-cell__dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.7);
+}
+
+/* past / disabled */
+.cdp-cell--past {
+  opacity: .32;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Footer ───────────────────────────────────────────── */
+.cdp-pop__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 14px;
+  border-top: 1px solid var(--border, #f3f4f6);
+  margin-top: 6px;
+}
+.cdp-pop__count {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+.cdp-pop__done {
+  padding: 6px 16px;
+  background: var(--primary, #6366f1);
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.cdp-pop__done:hover { background: #4f46e5; }
+
+/* ── Selected chips below the trigger ────────────────── */
+.cdp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.cdp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px 3px 10px;
+  background: rgba(99,102,241,.09);
+  border: 1px solid rgba(99,102,241,.2);
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--primary, #6366f1);
+}
+.cdp-chip__remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--primary, #6366f1);
+  cursor: pointer;
+  padding: 0;
+  transition: background .13s;
+}
+.cdp-chip__remove:hover {
+  background: rgba(99,102,241,.18);
+}
+/* Toast Notification Styles */
+.dd-toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 350px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.dd-toast {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 4px solid;
+  animation: slideIn 0.3s ease-out;
+}
+
+.dd-toast--success {
+  border-left-color: #10b981;
+  background: linear-gradient(to right, #f0fdf4, #ffffff);
+}
+
+.dd-toast--success .dd-toast-icon {
+  color: #10b981;
+}
+
+.dd-toast--error {
+  border-left-color: #ef4444;
+  background: linear-gradient(to right, #fef2f2, #ffffff);
+}
+
+.dd-toast--error .dd-toast-icon {
+  color: #ef4444;
+}
+
+.dd-toast--info {
+  border-left-color: #3b82f6;
+  background: linear-gradient(to right, #eff6ff, #ffffff);
+}
+
+.dd-toast--info .dd-toast-icon {
+  color: #3b82f6;
+}
+
+.dd-toast__content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.dd-toast-icon {
+  flex-shrink: 0;
+}
+
+.dd-toast__message {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1f2937;
+  line-height: 1.5;
+}
+
+.dd-toast__close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-left: 8px;
+  transition: color 0.2s;
+}
+
+.dd-toast__close:hover {
+  color: #4b5563;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+/* Optional: Add a subtle animation when the toast exits */
+.dd-toast.exit {
+  animation: slideOut 0.3s ease-in forwards;
+}
+
+/* Validation Error Styles */
+.dd-validation-errors {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.dd-validation-errors__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #991b1b;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.dd-validation-errors__list {
+  margin: 0;
+  padding-left: 24px;
+  color: #b91c1c;
+  font-size: 13px;
+}
+
+.dd-validation-errors__list li {
+  margin-bottom: 4px;
+}
+
+/* Update existing toast styles */
+.dd-toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  max-width: 380px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.dd-toast {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 4px solid;
+}
+
+.dd-toast--success {
+  border-left-color: #059669;
+  background: linear-gradient(to right, #ecfdf5, #ffffff);
+}
+
+.dd-toast--success .dd-toast-icon {
+  color: #059669;
+}
+
+.dd-toast--error {
+  border-left-color: #dc2626;
+  background: linear-gradient(to right, #fef2f2, #ffffff);
+}
+
+.dd-toast--error .dd-toast-icon {
+  color: #dc2626;
+}
+
+.dd-toast--info {
+  border-left-color: #2563eb;
+  background: linear-gradient(to right, #eff6ff, #ffffff);
+}
+
+.dd-toast--info .dd-toast-icon {
+  color: #2563eb;
+}
+
+.dd-toast--warning {
+  border-left-color: #d97706;
+  background: linear-gradient(to right, #fffbeb, #ffffff);
+}
+
+.dd-toast--warning .dd-toast-icon {
+  color: #d97706;
+}
+
+.dd-toast__message {
+  font-size: 14px;
+  font-weight: 500;
+  color: #111827;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
