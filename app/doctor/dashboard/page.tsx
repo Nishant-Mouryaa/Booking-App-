@@ -94,22 +94,9 @@ export default function DoctorDashboardPage() {
           </div>
 
           {/* Row 2 */}
-          <div className="dd-grid" style={{ marginTop: 14 }}>
-            <AppointmentSlotsCard
-              mergedDoctor={mergedDoctor}
-              overrides={overrides}
-              saving={saving}
-              onChange={handleFieldChange}
-              onSave={handleSave}
-              onReset={handleReset}
-            />
-            <FeeSummaryCard
-              mergedDoctor={mergedDoctor}
-              overrides={overrides}
-              doctor={doctor}
-              isAvailable={isAvailable}
-              onChange={handleFieldChange}
-            />
+         
+           
+        
             <div className="dd-grid" style={{ marginTop: 14 }}>
   <AppointmentSlotsCard
     mergedDoctor={mergedDoctor}
@@ -128,7 +115,7 @@ export default function DoctorDashboardPage() {
   />
 </div>
 
-          </div>
+          
 
           {/* Row 3 — full width */}
 <div style={{ marginTop: 14 }}>
