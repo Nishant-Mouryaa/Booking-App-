@@ -18,30 +18,7 @@
     "allergies": ["Penicillin", "Dust"],
     "chronicConditions": ["Mild Hypertension"],
     "prescriptions": [
-      {
-        "id": 1,
-        "doctor": "Dr. Prakash Das",
-        "specialty": "Cardiology",
-        "date": "2025-08-03",
-        "prescribedDate": "2025-08-07",
-        "medications": [
-          { "name": "Atorvastatin", "dosage": "10mg", "frequency": "Once daily", "duration": "30 days" },
-          { "name": "Amlodipine",   "dosage": "5mg",  "frequency": "Once daily", "duration": "30 days" }
-        ],
-        "notes": "Avoid fatty foods. Follow up in 4 weeks."
-      },
-      {
-        "id": 2,
-        "doctor": "Dr. Sarah Johnson",
-        "specialty": "General Medicine",
-        "date": "2025-07-10",
-        "prescribedDate": "2025-07-10",
-        "medications": [
-          { "name": "Paracetamol", "dosage": "500mg", "frequency": "Twice daily", "duration": "5 days" },
-          { "name": "Cetirizine",  "dosage": "10mg",  "frequency": "Once at night","duration": "7 days" }
-        ],
-        "notes": "Rest and stay hydrated."
-      }
+     
     ],
 "testReports": [
   {

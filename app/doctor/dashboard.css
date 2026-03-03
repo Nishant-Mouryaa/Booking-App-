@@ -1580,3 +1580,214 @@
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0);    }
 }
+
+/* ── Prescription Manager (Doctor Dashboard) ─────────────── */
+.prx-card { margin-top: 0; }
+
+.prx-flash {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.prx-flash--success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+.prx-flash--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+/* Form */
+.prx-form {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.prx-form__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.prx-form__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+.prx-form__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #9ca3af;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+.prx-form__close:hover { background: #f3f4f6; color: #374151; }
+
+/* Medications section */
+.prx-meds-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.prx-meds-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+}
+.prx-add-med-btn { font-size: 11px !important; padding: 4px 10px !important; }
+
+.prx-med-cols-head {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr 1fr;
+  gap: 8px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0 2px;
+}
+
+.prx-med-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.prx-med-row__fields {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.5fr 1fr;
+  gap: 8px;
+  flex: 1;
+}
+.prx-med-input { font-size: 12px !important; padding: 6px 8px !important; }
+.prx-med-remove {
+  background: none;
+  border: 1px solid #fca5a5;
+  border-radius: 6px;
+  color: #ef4444;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.prx-med-remove:hover { background: #fef2f2; }
+
+/* List */
+.prx-list { display: flex; flex-direction: column; gap: 8px; }
+
+.prx-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 32px;
+  color: #9ca3af;
+  font-size: 13px;
+  text-align: center;
+}
+.prx-empty small { font-size: 11px; color: #d1d5db; }
+
+.prx-item {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.prx-item__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.13s;
+}
+.prx-item__header:hover { background: #f9fafb; }
+.prx-item__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.prx-item__patient {
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.prx-item__diagnosis { font-size: 12px; color: #6b7280; }
+.prx-item__date { font-size: 11px; color: #9ca3af; }
+.prx-item__right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.prx-item__med-count { font-size: 11.5px; color: #6b7280; }
+.prx-item__body {
+  padding: 12px 14px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.prx-item__notes {
+  font-size: 12px;
+  color: #4b5563;
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  border: 1px solid #f3f4f6;
+}
+.prx-item__followup {
+  font-size: 12px;
+  color: #2563eb;
+}
+.prx-item__actions { display: flex; justify-content: flex-end; }
+
+/* ── Patient Profile — Prescriptions Tab additions ────────── */
+.pp-rx__diagnosis {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  background: #eff6ff;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #1e40af;
+  margin-bottom: 8px;
+}
+.pp-rx__diagnosis-label { font-weight: 600; flex-shrink: 0; }
+
+.pp-rx__followup {
+  font-size: 12.5px;
+  color: #2563eb;
+  padding: 6px 10px;
+  background: #eff6ff;
+  border-radius: 6px;
+  margin-top: 6px;
+}
+
+.pp-empty-state {
+  padding: 48px 24px;
+  text-align: center;
+}

@@ -9,6 +9,7 @@ import { ProfessionalInfoCard } from "./components/ProfessionalInfoCard";
 import { ReviewsContactCard }   from "./components/ReviewsContactCard";
 import { AppointmentSlotsCard } from "./components/AppointmentSlotsCard";
 import { FeeSummaryCard }        from "./components/FeeSummaryCard";
+import { PrescriptionManagerCard } from "./components/PrescriptionManagerCard";
 
 export default function DoctorDashboardPage() {
   const {
@@ -109,7 +110,34 @@ export default function DoctorDashboardPage() {
               isAvailable={isAvailable}
               onChange={handleFieldChange}
             />
+            <div className="dd-grid" style={{ marginTop: 14 }}>
+  <AppointmentSlotsCard
+    mergedDoctor={mergedDoctor}
+    overrides={overrides}
+    saving={saving}
+    onChange={handleFieldChange}
+    onSave={handleSave}
+    onReset={handleReset}
+  />
+  <FeeSummaryCard
+    mergedDoctor={mergedDoctor}
+    overrides={overrides}
+    doctor={doctor}
+    isAvailable={isAvailable}
+    onChange={handleFieldChange}
+  />
+</div>
+
           </div>
+
+          {/* Row 3 — full width */}
+<div style={{ marginTop: 14 }}>
+  <PrescriptionManagerCard
+    doctorId={doctor.id}
+    doctorName={mergedDoctor.name}
+    specialty={mergedDoctor.specialty}
+  />
+</div>
         </div>
       </main>
     </div>

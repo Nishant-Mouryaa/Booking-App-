@@ -4,6 +4,9 @@ import { useState, useRef } from "react";
 import mockData from "@/data/mockData.json";
 import ReportViewerModal   from "./ReportViewerModal";
 import DocumentViewerModal from "./DocumentViewerModal";
+import { PrescriptionsTab } from "./PrescriptionsTab";
+
+import "../home.css";
 
 type ProfileTab =
   | "profile" | "prescriptions" | "reports"
@@ -475,65 +478,17 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* ══ PRESCRIPTIONS TAB ═══════════════════════════ */}
-        {activeTab === "prescriptions" && (
-          <div className="pp-feed">
-            <div className="pp-feed__header">
-              <span className="pp-feed__title">Prescription History</span>
-              <span className="pp-feed__count">
-                {(base.prescriptions as any[]).length} records
-              </span>
-            </div>
-
-            {(base.prescriptions as any[]).map((rx: any) => (
-              <div key={rx.id} className="pp-rx">
-                <div className="pp-rx__head">
-                  <div className="pp-rx__doc-avatar">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="8" r="4" stroke="currentColor" strokeWidth="1.8"/>
-                      <path d="M5 20c0-3.314 2.686-6 6-6h2c3.314 0 6 2.686 6 6"
-                        stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
-                    </svg>
-                  </div>
-                  <div className="pp-rx__meta">
-                    <span className="pp-rx__doc-name">{rx.doctor}</span>
-                    <span className="pp-rx__specialty">{rx.specialty}</span>
-                    <span className="pp-rx__date">📅 {fmtDate(rx.date)}</span>
-                  </div>
-                  <span className="pp-status pp-status--green">Prescribed</span>
-                </div>
-
-                <div className="pp-rx__meds">
-                  <div className="pp-rx__meds-header">💊 Prescribed Medications</div>
-                  <div className="pp-med-table">
-                    <div className="pp-med-table__head">
-                      <span>Medicine</span>
-                      <span>Dosage</span>
-                      <span>Frequency</span>
-                      <span>Duration</span>
-                    </div>
-                    {(rx.medications as any[]).map((med: any, i: number) => (
-                      <div key={i} className="pp-med-table__row">
-                        <span className="pp-med-table__name">{med.name}</span>
-                        <span>{med.dosage}</span>
-                        <span>{med.frequency}</span>
-                        <span>{med.duration}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {rx.notes && (
-                  <div className="pp-rx__notes">ℹ️ {rx.notes}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+      
+       
+{/* ══ PRESCRIPTIONS TAB ═══════════════════════════ */}
+{activeTab === "prescriptions" && (
+  <PrescriptionsTab patientEmail={profile.email} />
+)}
 
         {/* ══ TEST REPORTS TAB ════════════════════════════ */}
-        {activeTab === "reports" && (
-          <div className="pp-feed">
+       {activeTab === "reports" && (
+  <div className="pp-feed">
+          
             <div className="pp-feed__header">
               <span className="pp-feed__title">Test Reports</span>
               <span className="pp-feed__count">
